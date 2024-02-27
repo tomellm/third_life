@@ -1,4 +1,4 @@
-use crate::time::{DateChanged, GameDate};
+use crate::{time::{DateChanged, GameDate}, SimulationState, common::utils::percentage_chance};
 use bevy::prelude::*;
 use bevy_egui::{egui::Window, EguiContexts};
 use chrono::{Datelike, NaiveDate};
@@ -7,16 +7,16 @@ use rand_distr::{num_traits::Float, Distribution, SkewNormal};
 use rnglib::{Language, RNG};
 
 use super::{init_colonies, WorldColony};
-use crate::common::utils::percentage_chance;
+
+
 
 pub struct PopulationPlugin;
+
 impl Plugin for PopulationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Startup,
-            (init_population, init_citizens)
-                .chain()
-                .after(init_colonies),
+            OnEnter(SimulationState::Running), 
+            (init_population, init_citizens).chain().after(init_colonies)
         )
         .add_systems(
             Update,
@@ -25,9 +25,9 @@ impl Plugin for PopulationPlugin {
                 init_pregnancies,
                 citizen_births,
                 update_population,
-            ),
+                population_info_windows
+            ).run_if(in_state(SimulationState::Running)),
         )
-        .add_systems(Update, population_info_windows)
         .add_event::<CitizenCreated>();
     }
 }
@@ -166,6 +166,7 @@ fn init_population(colonies: Query<Entity, With<WorldColony>>, mut commands: Com
 }
 
 fn init_citizens(
+
     populations: Query<Entity, With<Population>>,
     mut commands: Commands,
     mut event_writer: EventWriter<CitizenCreated>,

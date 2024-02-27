@@ -1,0 +1,8 @@
+{
+    "real_time_day_length": 1.0,
+    "starting_day": {
+        "day": 1,
+        "month": 1,
+        "year": 2150
+    }
+}
