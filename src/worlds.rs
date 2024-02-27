@@ -3,10 +3,12 @@ mod population;
 
 use std::{collections::HashMap, ops::Deref};
 
-use bevy::prelude::*;
+use bevy::{log::tracing_subscriber::fmt::format, prelude::*};
 use bevy_egui::{egui::{Window, Color32, Ui}, EguiContexts};
+use chrono::NaiveDate;
 use egui_plot::{Legend, Plot, BarChart, Bar};
 
+use crate::time::GameDate;
 use self::population::{PopulationPlugin, Citizen};
 
 pub struct WorldsPlugin;
@@ -59,22 +61,23 @@ fn init_colonies(
 
 fn display_colonies(
     mut contexts: EguiContexts,
-    citizens: Query<(&Citizen, &Parent)>
+    citizens: Query<(&Citizen, &Parent)>,
+    game_date: Res<GameDate>
 ) {
     let populations_map = citizens.into_iter()
         .fold(HashMap::new(), |mut acc: HashMap<Entity, HashMap<usize, usize>>, (c, p)| {
             *acc.entry(p.get()).or_insert(HashMap::new())
-                .entry(c.age).or_insert(0) += 1;
+                .entry(game_date.date.years_since(c.birthday).unwrap() as usize).or_insert(0) += 1;
             acc
         });
     for (parent, pop) in populations_map {
         Window::new(format!("Window of {parent:?}")).show(contexts.ctx_mut(), |ui| {
-            ui.label("hello my friends");
+            ui.label(format!("Years Elapsed:{:?}", game_date.date.years_since(NaiveDate::from_ymd_opt(2150, 01, 01).unwrap()).unwrap()));
             let bars = (0..100).into_iter().map(|index| {
                 let height = pop.get(&index).map(|u|*u).unwrap_or(0);
                 Bar::new(index as f64, height as f64).width(1.)
             }).collect::<Vec<_>>();
-            let mut chart = BarChart::new(bars)
+            let chart = BarChart::new(bars)
                 .color(Color32::LIGHT_BLUE)
                 .name(format!("Population chart of {parent:?}"));
              Plot::new(format!("Population {:?}",parent))

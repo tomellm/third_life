@@ -21,11 +21,10 @@ impl Plugin for PopulationPlugin {
         .add_systems(
             Update,
             (
-                update_population,
-                age_citizens,
                 init_couples,
                 init_pregnancies,
                 citizen_births,
+                update_population,
             ),
         )
         .add_systems(Update, population_info_windows)
@@ -42,7 +41,6 @@ pub struct Population {
 #[derive(Component, PartialEq, Clone)]
 pub struct Citizen {
     pub name: String,
-    pub age: usize,
     pub birthday: NaiveDate,
 }
 
@@ -60,20 +58,6 @@ pub struct Reproduction {
 #[derive(Component)]
 pub struct Spouse {
     pub spouse: Entity,
-}
-
-fn age_citizens(
-    mut citizens: Query<&mut Citizen>,
-    game_date: Res<GameDate>,
-    mut event_reader: EventReader<DateChanged>,
-) {
-    for _ in event_reader.read() {
-        for mut citizen in &mut citizens {
-            if citizen.birthday.month() == game_date.date.month() && citizen.birthday.day() == game_date.date.day() {
-                citizen.age += 1;
-            }
-        }
-    }
 }
 
 fn population_info_windows(mut contexts: EguiContexts, populations: Query<&Population>) {
@@ -96,20 +80,16 @@ fn citizen_births(
     game_date: Res<GameDate>,
 ) {
     for _ in event_reader.read() {
-        println!("GameDate: {} ", game_date.date);
-        for (entity, citizen, reproduction, parent) in &mut pregnant_women.iter_mut() {
+        for (entity, _, reproduction, parent) in &mut pregnant_women.iter_mut() {
             if reproduction.baby_due_date == game_date.date {
-                println!("{} has given birth", citizen.name);
                 commands.entity(parent.get()).with_children(|commands| {
                     let name_rng = RNG::try_from(&Language::Roman).unwrap();
 
                     let new_born = Citizen {
                         name: name_rng.generate_name(),
-                        age: 0,
                         birthday: game_date.date,
                     };
                     event_writer.send(CitizenCreated {
-                        citizen: new_born.clone(),
                         population: parent.get(),
                     });
 
@@ -135,7 +115,7 @@ fn init_pregnancies(
 ) {
     for _ in event_reader.read() {
         for citizen in &mut citizens {
-            if citizen.1.age >= 18 && citizen.1.age <= 45 {
+            if game_date.date.years_since(citizen.1.birthday).unwrap() >= 18 && game_date.date.years_since(citizen.1.birthday).unwrap() <= 45 {
                 let pregnancy_chance = percentage_chance(42);
                 if pregnancy_chance {
                     commands.entity(citizen.0).insert(Reproduction {
@@ -153,13 +133,14 @@ fn init_pregnancies(
 fn init_couples(
     mut commands: Commands,
     mut event_reader: EventReader<DateChanged>,
+    game_date: Res<GameDate>,
     men: Query<(Entity, &Citizen), (With<Male>, Without<Spouse>)>,
     women: Query<(Entity, &Citizen), (With<Female>, Without<Spouse>, Without<Reproduction>)>,
 ) {
     let mut available_men: Vec<Entity> = men.iter().map(|(entity, _)| entity).collect();
     for _ in event_reader.read() {
         for (woman_entity, w_citizen) in women.iter() {
-            if w_citizen.age > 18 {
+            if game_date.date.years_since(w_citizen.birthday).unwrap() > 18 {
                 if let Some(man_entity) = available_men.pop() {
                     commands
                         .entity(woman_entity)
@@ -199,19 +180,21 @@ fn init_citizens(
             let year = game_date.date.year_ce().1 as u32;
 
             for _ in 0..1000 {
+                let age = age_gen.next().unwrap().floor() as u32;
+                
                 let mut rng = thread_rng();
                 let birthday = NaiveDate::from_yo_opt(
-                    year.try_into().unwrap(),
+                    ((year - age)).try_into().unwrap(),
                      rng.gen_range(1..=365))
                      .unwrap();
+
+                
                 let citizen = Citizen {
                     name: name_rng.generate_name(),
-                    age: age_gen.next().unwrap().floor() as usize,
                     birthday: birthday,
                 };
                 event_writer.send(CitizenCreated {
                     population: population,
-                    citizen: citizen.clone(),
                 });
 
                 let mut entity_commands = parent.spawn(citizen);
@@ -228,16 +211,22 @@ fn init_citizens(
 #[derive(Event)]
 pub struct CitizenCreated {
     population: Entity,
-    citizen: Citizen,
 }
 
 fn update_population(
     mut event_reader: EventReader<CitizenCreated>,
     mut populations: Query<&mut Population>,
+    citizens: Query<&Citizen>,
+    game_date: Res<GameDate>,
 ) {
     for event in event_reader.read() {
         let mut population = populations.get_mut(event.population).unwrap();
+        let all_citizen_ages: Vec<usize> = citizens
+            .iter()
+            .map(|citizen| game_date.date.years_since(citizen.birthday).unwrap() as usize)
+            .collect();
+
         population.count += 1;
-        population.average_age = population.average_age + event.citizen.age / 2;
+        population.average_age = all_citizen_ages.iter().sum::<usize>() / population.count;
     }
 }
