@@ -7,7 +7,8 @@ impl Plugin for TimeDatePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DayLength>()
             .init_resource::<GameDate>()
-            .add_systems(Update, update_date);
+            .add_systems(Update, update_date)
+            .add_event::<DateChanged>();
     }
 }
 
@@ -41,12 +42,14 @@ fn update_date(
     time: Res<Time>,
     mut day_length: ResMut<DayLength>,
     mut game_date: ResMut<GameDate>,
+    mut date_changed_writer: EventWriter<DateChanged>,
 ) {
     day_length.timer.tick(time.delta());
 
-    if day_length.timer.finished() {
+    // if day_length.timer.finished() {
         game_date.date = game_date.date + Duration::days(1);
-    }
+        date_changed_writer.send(DateChanged);
+    // }
 }
 
 impl std::ops::Deref for GameDate {
@@ -57,3 +60,6 @@ impl std::ops::Deref for GameDate {
 }
 
 
+
+#[derive(Event)]
+pub struct DateChanged;
