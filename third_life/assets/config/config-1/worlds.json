@@ -1,0 +1,28 @@
+{
+    "worlds": [
+        {
+            "name": "Earth",
+            "population": {
+                "size": 100,
+                "median": 30,
+                "stdev": 4
+            }
+        },
+        {
+            "name": "Mars",
+            "population": {
+                "size": 100,
+                "median": 30,
+                "stdev": 4
+            }
+        },
+        {
+            "name": "Saturn",
+            "population": {
+                "size": 100,
+                "median": 30,
+                "stdev": 4
+            }
+        }
+    ]
+}

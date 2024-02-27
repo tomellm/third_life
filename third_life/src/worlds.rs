@@ -1,5 +1,6 @@
 mod food;
 mod population;
+mod config;
 
 use std::{collections::HashMap, ops::Deref};
 
@@ -8,17 +9,22 @@ use bevy_egui::{egui::{Window, Color32, Ui}, EguiContexts};
 use chrono::NaiveDate;
 use egui_plot::{Legend, Plot, BarChart, Bar};
 
+use crate::{SimulationState, config::{RegisterConfigReaderEvent, ConfigReaderFinishedEvent}};
+
+use self::{population::{PopulationPlugin, Citizen}, config::{WorldsConfig, WorldsConfigPlugin}, food::FoodPlugin};
 use crate::time::GameDate;
-use self::{food::FoodPlugin, population::{Citizen, PopulationPlugin}};
 
 pub struct WorldsPlugin;
 
 impl Plugin for WorldsPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(Startup, init_colonies)
-            .add_plugins((PopulationPlugin, FoodPlugin))
-            .add_systems(Update, display_colonies);
+            .add_systems(OnEnter(SimulationState::Running), init_colonies)
+            .add_plugins((WorldsConfigPlugin, PopulationPlugin, FoodPlugin))
+            .add_systems(
+                Update,
+                display_colonies.run_if(in_state(SimulationState::Running))
+            );
     }
 }
 
@@ -47,7 +53,7 @@ fn init_colonies(
 ) {
     commands.spawn((
             WorldColony,
-            WorldEntity::new("Earth")
+            WorldEntity::new("Earth"),
     ));
     commands.spawn((
             WorldColony,

@@ -2,15 +2,15 @@ use std::{hash::Hash, usize};
 
 use bevy::{log::tracing_subscriber::fmt::time, prelude::*, transform::commands, utils::HashMap};
 
-use crate::time::DateChanged;
+use crate::{time::DateChanged, SimulationState};
 
 use super::{init_colonies, population::{self, Citizen, Population}, WorldColony};
 
 pub struct FoodPlugin;
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, init_farms.after(init_colonies))
-            .add_systems(Update, check_farm_workers);
+        app.add_systems(OnEnter(SimulationState::Running), init_farms.after(init_colonies))
+            .add_systems(Update, (check_farm_workers).run_if(in_state(SimulationState::Running)));
     }
 }
 
@@ -60,7 +60,6 @@ fn check_farm_workers(
 }
 
 /*
-
 fn create_meat(
     farms: Query<(&CowFarm, &Parent)>>,
     worlds: Query<(Entity, &Children), With<Planet>>,
@@ -90,13 +89,4 @@ fn create_food(
 ) {
 
 }
-
-
-
-
-
-
-
-
-
 */

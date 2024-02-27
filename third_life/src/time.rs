@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 use chrono::{prelude::*, Duration};
 
+use crate::SimulationState;
+
 pub struct TimeDatePlugin;
 
 impl Plugin for TimeDatePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DayLength>()
             .init_resource::<GameDate>()
-            .add_systems(Update, update_date)
+            .add_systems(Update, update_date.run_if(in_state(SimulationState::Running)))
             .add_event::<DateChanged>();
     }
 }
