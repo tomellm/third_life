@@ -1,18 +1,62 @@
-use bevy::prelude::*;
+use std::{hash::Hash, usize};
 
-use super::*;
+use bevy::{log::tracing_subscriber::fmt::time, prelude::*, transform::commands, utils::HashMap};
+
+use crate::time::DateChanged;
+
+use super::{init_colonies, population::{self, Citizen, Population}, WorldColony};
+
+pub struct FoodPlugin;
+impl Plugin for FoodPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, init_farms.after(init_colonies))
+            .add_systems(Update, check_farm_workers);
+    }
+}
 
 #[derive(Component)]
 pub struct FoodResource;
 
 #[derive(Component)]
 pub struct MeatResource;
-#[derive(Component)]
-pub struct CarbResource;
 
 #[derive(Component)]
-pub struct CowFarm {
-    available_resource: f32
+pub struct CarbResource {
+    amount: f32,
+}
+
+#[derive(Component)]
+pub struct WheatFarm {
+    available_resource: f32,
+}
+
+#[derive(Component)]
+pub struct WheatFarmer {
+    farm: Entity,
+}
+
+fn init_farms(mut commands: Commands, colonies: Query<Entity, With<WorldColony>>) {
+    for colony in colonies.iter() {
+        commands.entity(colony).with_children(|commands| {
+            commands.spawn(WheatFarm {
+                available_resource: 100.0,
+            });
+        });
+    }
+}
+
+fn check_farm_workers(
+    mut commands: Commands,
+    mut population: Query<(&mut Population, &Parent)>,
+    farmers: Query<(&WheatFarmer)>, 
+) {
+    let farms_map = farmers.iter()
+        .fold(HashMap::new(), |mut acc: HashMap<Entity, usize>, farmer | {
+            *acc.entry(farmer.farm).or_insert(0) += 1;
+            acc
+        });
+    
+    
 }
 
 /*
@@ -56,8 +100,3 @@ fn create_food(
 
 
 */
-
-
-
-
-
