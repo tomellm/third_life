@@ -81,7 +81,8 @@ impl Plugin for ConfigurationPlugin {
             ))
             .add_systems(Update, (recive_config_loaded_events).run_if(
                 in_state(SimulationState::LoadingConfig)
-            ));
+            ))
+            .add_plugins(ThirdLifeConfigPlugin);
     }
 }
 
@@ -265,12 +266,12 @@ impl ConfigurationLoader for ThirdLifeConfig {
 
 #[derive(Config, Debug, Deserialize, Clone)]
 pub struct StartingDate {
-    #[def(1.)]
-    day: Option<f32>,
-    #[def(1.)]
-    month: Option<f32>,
-    #[def(2050.)]
-    year: Option<f32>
+    #[def(1)]
+    day: Option<u32>,
+    #[def(1)]
+    month: Option<u32>,
+    #[def(2050)]
+    year: Option<i32>
 }
 
 impl std::ops::Deref for AllConfigReaders {

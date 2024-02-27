@@ -1,15 +1,19 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, transform::commands};
 use chrono::{prelude::*, Duration};
+use rand_distr::num_traits::Float;
 
-use crate::SimulationState;
+use crate::{config::ThirdLifeConfig, SimulationState};
 
 pub struct TimeDatePlugin;
 
 impl Plugin for TimeDatePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DayLength>()
-            .init_resource::<GameDate>()
-            .add_systems(Update, update_date.run_if(in_state(SimulationState::Running)))
+        app
+            .add_systems(OnEnter(SimulationState::Running), (init_day_length, init_start_date))
+            .add_systems(
+                Update,
+                update_date.run_if(in_state(SimulationState::Running)),
+            )
             .add_event::<DateChanged>();
     }
 }
@@ -19,12 +23,10 @@ struct DayLength {
     timer: Timer,
 }
 
-impl Default for DayLength {
-    fn default() -> Self {
-        Self {
-            timer: Timer::from_seconds(2.0, TimerMode::Repeating),
-        }
-    }
+fn init_day_length(mut commands: Commands, config: Res<ThirdLifeConfig>) {
+    commands.insert_resource(DayLength {
+        timer: Timer::from_seconds(config.real_time_day_length(), TimerMode::Repeating),
+    });
 }
 
 #[derive(Resource, Debug)]
@@ -32,12 +34,13 @@ pub struct GameDate {
     pub date: NaiveDate,
 }
 
-impl Default for GameDate {
-    fn default() -> Self {
-        Self {
-            date: NaiveDate::from_ymd_opt(2150, 01, 01).unwrap(),
-        }
-    }
+fn init_start_date(mut commands: Commands, config: Res<ThirdLifeConfig>) {
+    commands.insert_resource(GameDate {
+        date: NaiveDate::from_ymd_opt(
+            config.starting_day().year(),
+            config.starting_day().month(),
+            config.starting_day().day()).unwrap()
+    })
 }
 
 fn update_date(
@@ -60,8 +63,6 @@ impl std::ops::Deref for GameDate {
         &self.date
     }
 }
-
-
 
 #[derive(Event)]
 pub struct DateChanged;
