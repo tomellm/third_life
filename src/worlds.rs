@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use egui_plot::{Legend, Plot, BarChart, Bar};
 
 use crate::time::GameDate;
-use self::population::{PopulationPlugin, Citizen};
+use self::{food::FoodPlugin, population::{Citizen, PopulationPlugin}};
 
 pub struct WorldsPlugin;
 
@@ -17,7 +17,7 @@ impl Plugin for WorldsPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(Startup, init_colonies)
-            .add_plugins(PopulationPlugin)
+            .add_plugins((PopulationPlugin, FoodPlugin))
             .add_systems(Update, display_colonies);
     }
 }
