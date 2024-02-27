@@ -20,7 +20,7 @@ struct DayLength {
 impl Default for DayLength {
     fn default() -> Self {
         Self {
-            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.01, TimerMode::Repeating),
         }
     }
 }
@@ -46,10 +46,10 @@ fn update_date(
 ) {
     day_length.timer.tick(time.delta());
 
-    // if day_length.timer.finished() {
+    if day_length.timer.finished() {
         game_date.date = game_date.date + Duration::days(1);
         date_changed_writer.send(DateChanged);
-    // }
+    }
 }
 
 impl std::ops::Deref for GameDate {
