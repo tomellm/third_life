@@ -6,6 +6,11 @@
                 "size": 100,
                 "median": 30,
                 "stdev": 4
+            },
+            "environment" : {
+                "urbanization": 0.75,
+                "env_health": 0.5,
+                "ecosystem_vitylity": 0.5
             }
         },
         {
@@ -14,6 +19,11 @@
                 "size": 100,
                 "median": 30,
                 "stdev": 4
+            },
+            "environment" : {
+                "urbanization": 0.75,
+                "env_health": 0.5,
+                "ecosystem_vitylity": 0.5
             }
         },
         {
@@ -22,6 +32,11 @@
                 "size": 100,
                 "median": 30,
                 "stdev": 4
+            },
+            "environment" : {
+                "urbanization": 0.75,
+                "env_health": 0.5,
+                "ecosystem_vitylity": 0.5
             }
         }
     ]
