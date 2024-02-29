@@ -1,20 +1,21 @@
-use bevy::{prelude::*, transform::commands};
-use chrono::{prelude::*, Duration};
-use rand_distr::num_traits::Float;
-
 use crate::{config::ThirdLifeConfig, SimulationState};
+use bevy::prelude::*;
+use chrono::{prelude::*, Duration};
 
 pub struct TimeDatePlugin;
 
 impl Plugin for TimeDatePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(OnEnter(SimulationState::Running), (init_day_length, init_start_date))
-            .add_systems(
-                Update,
-                update_date.run_if(in_state(SimulationState::Running)),
-            )
-            .add_event::<DateChanged>();
+        app.add_systems(
+            OnEnter(SimulationState::Running),
+            (init_day_length, init_start_date),
+        )
+        .add_systems(
+            Update,
+            update_date.run_if(in_state(SimulationState::Running)),
+        )
+        .add_event::<DateChanged>()
+        .add_event::<MonthChanged>();
     }
 }
 
@@ -39,7 +40,9 @@ fn init_start_date(mut commands: Commands, config: Res<ThirdLifeConfig>) {
         date: NaiveDate::from_ymd_opt(
             config.starting_day().year(),
             config.starting_day().month(),
-            config.starting_day().day()).unwrap()
+            config.starting_day().day(),
+        )
+        .unwrap(),
     })
 }
 
@@ -48,11 +51,17 @@ fn update_date(
     mut day_length: ResMut<DayLength>,
     mut game_date: ResMut<GameDate>,
     mut date_changed_writer: EventWriter<DateChanged>,
+    mut month_changed_writer: EventWriter<MonthChanged>,
 ) {
     day_length.timer.tick(time.delta());
 
     if day_length.timer.finished() {
         game_date.date = game_date.date + Duration::days(1);
+
+        if game_date.date.month() != game_date.date.pred_opt().unwrap().month() {
+            month_changed_writer.send(MonthChanged);
+        }
+
         date_changed_writer.send(DateChanged);
     }
 }
@@ -66,3 +75,6 @@ impl std::ops::Deref for GameDate {
 
 #[derive(Event)]
 pub struct DateChanged;
+
+#[derive(Event)]
+pub struct MonthChanged;
