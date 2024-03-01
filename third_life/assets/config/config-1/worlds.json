@@ -3,9 +3,10 @@
         {
             "name": "Earth",
             "population": {
-                "size": 100,
-                "median": 30,
-                "stdev": 4
+                "size": 1000,
+                "location": 18.0,
+                "scale": 12.0,
+                "shape": 10.0
             },
             "environment" : {
                 "urbanization": 0.75,
@@ -16,9 +17,10 @@
         {
             "name": "Mars",
             "population": {
-                "size": 100,
-                "median": 30,
-                "stdev": 4
+                "size": 1000,
+               "location": 18.0,
+                "scale": 24.0,
+                "shape": 10.0 
             },
             "environment" : {
                 "urbanization": 0.75,
@@ -29,9 +31,10 @@
         {
             "name": "Saturn",
             "population": {
-                "size": 100,
-                "median": 30,
-                "stdev": 4
+                "size": 1000,
+                "location": 18.0,
+                "scale": 6.0,
+                "shape": 10.0 
             },
             "environment" : {
                 "urbanization": 0.75,

@@ -12,7 +12,7 @@ impl ConfigurationLoader for WorldsConfig {
     }
 }
 
-#[derive(Deserialize, Debug, Clone, Resource, ConfigFile, Default)]
+#[derive(Deserialize, Debug, Clone, Resource, ConfigFile, Default, Config)]
 pub struct WorldsConfig {
     worlds: Vec<WorldConfig>
 }
@@ -28,12 +28,14 @@ pub struct WorldConfig {
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
 pub struct PopulationConfig {
-    #[def(1000.)]
-    size: Option<f32>,
-    #[def(30.)]
-    median: Option<f32>,
-    #[def(4.)]
-    stdev: Option<f32>
+    #[def(1000)]
+    size: Option<u32>,
+    #[def(18.)]
+    location: Option<f32>,
+    #[def(6.)]
+    scale: Option<f32>,
+    #[def(10.)]
+    shape: Option<f32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
