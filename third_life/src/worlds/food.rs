@@ -30,12 +30,17 @@ impl Plugin for FoodPlugin {
                 get_cow_farm_workers,
                 work_cow_farm,
                 cook_food,
-                display_food,
+                //display_food,
             )
                 .run_if(in_state(SimulationState::Running)),
         )
         .add_event::<WheatFarmNeedsWorker>()
-        .add_event::<CowFarmNeedsWorker>();
+        .add_event::<CowFarmNeedsWorker>()
+        .add_event::<MeatCreated>()
+        .add_event::<CarbCreated>()
+        .add_event::<MeatConsumed>()
+        .add_event::<CarbConsumed>()
+        .add_event::<FoodCreated>();
     }
 }
 
@@ -54,7 +59,7 @@ pub struct FoodResource {
 
 #[derive(Component)]
 pub struct CarbResource {
-    amount: f32,
+    pub amount: f32,
 }
 
 #[derive(Component)]
@@ -75,7 +80,7 @@ pub struct WheatFarmer {
 
 #[derive(Component)]
 pub struct MeatResource {
-    amount: f32,
+    pub amount: f32,
 }
 
 #[derive(Component)]
@@ -262,11 +267,18 @@ fn get_farm_workers(
     }
 }
 
+#[derive(Event)]
+pub struct CarbCreated {
+    pub colony: Entity,
+    pub amount: f32
+}
+
 fn work_farm(
     mut day_changed_event_reader: EventReader<DateChanged>,
     mut wheat_farms: Query<(Entity, &mut WheatFarm, &WheatFarmOf)>,
     farmers: Query<(&WheatFarmer, &CitizenOf)>,
     mut carb_resources: Query<(&mut CarbResource, &ResourceOf)>,
+    mut carb_created: EventWriter<CarbCreated>
 ) {
     for _ in day_changed_event_reader.read() {
         let mut farms_map = wheat_farms.iter_mut().fold(
@@ -301,7 +313,9 @@ fn work_farm(
                 if harvested_amount > 0.0 {
                     for (mut carb_resource, resource_of) in carb_resources.iter_mut() {
                         if resource_of.colony == colony {
-                            carb_resource.amount += harvested_amount * 2670.0;
+                            let amount = harvested_amount * 2670.0;
+                            carb_resource.amount += amount;
+                            carb_created.send(CarbCreated{ colony, amount });
                         }
                     }
                 }
@@ -344,7 +358,6 @@ fn check_cow_farm_workers(
 
         for (colony, farms) in farms_map {
             for (farm, farmer_count) in farms {
-                info!("{farmer_count}");
                 if farmer_count < 4 {
                     for _ in 0..(4 - farmer_count) {
                         event_writer.send(CowFarmNeedsWorker { colony, farm });
@@ -375,11 +388,18 @@ fn get_cow_farm_workers(
     }
 }
 
+#[derive(Event)]
+pub struct MeatCreated {
+    pub colony: Entity,
+    pub amount: f32
+}
+
 fn work_cow_farm(
     mut day_changed_event_reader: EventReader<DateChanged>,
     mut cow_farms: Query<(Entity, &mut CowFarm, &CowFarmOf)>,
     farmers: Query<(&CowFarmer, &CitizenOf)>,
     mut meat_resources: Query<(&mut MeatResource, &ResourceOf)>,
+    mut meat_created: EventWriter<MeatCreated>
 ) {
     for _ in day_changed_event_reader.read() {
         let mut farms_map = cow_farms.iter_mut().fold(
@@ -415,7 +435,9 @@ fn work_cow_farm(
                     for (mut meat_resource, resource_of) in meat_resources.iter_mut() {
                         if resource_of.colony == colony {
                             //todo: need to figure out 1 day of work= how many kilos meat.
-                            meat_resource.amount += harvested_amount * 2000.0;
+                            let amount = harvested_amount * 2000.0;
+                            meat_resource.amount += amount;
+                            meat_created.send(MeatCreated { colony, amount });
                         }
                     }
                 }
@@ -424,10 +446,31 @@ fn work_cow_farm(
     }
 }
 
+#[derive(Event)]
+pub struct MeatConsumed {
+    pub colony: Entity,
+    pub amount: f32
+}
+
+#[derive(Event)]
+pub struct CarbConsumed {
+    pub colony: Entity,
+    pub amount: f32
+}
+
+#[derive(Event)]
+pub struct FoodCreated {
+    pub colony: Entity,
+    pub amount: f32
+}
+
 fn cook_food(
     mut food_resources: Query<(Entity, &mut FoodResource, &ResourceOf)>,
     mut carb_resources: Query<(Entity, &mut CarbResource, &ResourceOf)>,
     mut meat_resources: Query<(Entity, &mut MeatResource, &ResourceOf)>,
+    mut food_created: EventWriter<FoodCreated>,
+    mut carb_consumed: EventWriter<CarbConsumed>,
+    mut meat_consumed: EventWriter<MeatConsumed>,
 ) {
     let mut colony_food_resources_map = food_resources.iter_mut().fold(
         HashMap::new(),
@@ -468,11 +511,20 @@ fn cook_food(
             .unwrap();
 
         let food_cook_multiplier = 5.0;
-        if carb_resource.amount > 100.0 * food_cook_multiplier 
+
+        if carb_resource.amount > 100.0  * food_cook_multiplier
             && meat_resource.amount > 100.0 * food_cook_multiplier {
-            carb_resource.amount -= 100.0 * food_cook_multiplier;
-            meat_resource.amount -= 100.0 * food_cook_multiplier;
-            food_resource.amount += 180.0 * food_cook_multiplier;
+            let carb_consumed_amount = 100.0 * food_cook_multiplier;
+            let meat_consumed_amount = 100.0 * food_cook_multiplier;
+            let food_created_amount = 100.0 * food_cook_multiplier;
+
+            carb_resource.amount -= carb_consumed_amount;
+            meat_resource.amount -= meat_consumed_amount;
+            food_resource.amount += food_created_amount;
+
+            carb_consumed.send(CarbConsumed { colony, amount: carb_consumed_amount });
+            meat_consumed.send(MeatConsumed { colony, amount: meat_consumed_amount });
+            food_created.send(FoodCreated { colony, amount: food_created_amount });
         }
     }
 }

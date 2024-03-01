@@ -10,7 +10,7 @@ use rand::{thread_rng, Rng};
 use rand_distr::{num_traits::Float, Distribution, SkewNormal};
 use rnglib::{Language, RNG};
 
-use super::{init_colonies, WorldColony};
+use super::{init_colonies, WorldColony, config::WorldsConfig, WorldEntity};
 
 pub struct PopulationPlugin;
 
@@ -30,7 +30,7 @@ impl Plugin for PopulationPlugin {
                 init_pregnancies,
                 citizen_births,
                 update_population,
-                population_info_windows,
+                //population_info_windows,
             )
                 .run_if(in_state(SimulationState::Running)),
         )
@@ -113,7 +113,7 @@ fn citizen_births(
                             false => commands.spawn((new_born, CitizenOf { colony }, Female)),
                         };
 
-                        event_writer.send(CitizenCreated { colony: colony });
+                        event_writer.send(CitizenCreated { age: 0, colony });
                     }
                 }
                 commands.entity(entity).remove::<Pregnancy>();
@@ -292,20 +292,24 @@ fn init_couples(
 }
 
 fn init_citizens(
-    colonies: Query<Entity, With<WorldColony>>,
+    colonies: Query<(Entity, &WorldEntity), With<WorldColony>>,
     mut commands: Commands,
     mut event_writer: EventWriter<CitizenCreated>,
     game_date: Res<GameDate>,
+    worlds_config: Res<WorldsConfig>
 ) {
-    for colony in &colonies {
+    for (colony, WorldEntity { name }) in colonies.iter() {
+        let pop_config = worlds_config.worlds().iter().filter(|e| e.name().eq(name)).collect::<Vec<_>>().first().unwrap().population();
         let mut rng = thread_rng();
         let name_rng = RNG::try_from(&Language::Roman).unwrap();
-        let skew_normal = SkewNormal::new(18.0, 6.0, 10.0).unwrap();
+        let skew_normal = SkewNormal::new(
+            pop_config.location(), pop_config.scale(), pop_config.shape()
+        ).unwrap();
         let mut age_gen = skew_normal.sample_iter(&mut rng);
-        let year = game_date.date.year_ce().1 as u32;
+        let year = game_date.date.year_ce().1 as usize;
 
-        for _ in 0..1000 {
-            let age = age_gen.next().unwrap().floor() as u32;
+        for _ in 0..pop_config.size() {
+            let age = age_gen.next().unwrap().floor() as usize;
             let birthday = NaiveDate::from_yo_opt(
                 (year - age).try_into().unwrap(),
                 thread_rng().gen_range(1..=365),
@@ -314,7 +318,7 @@ fn init_citizens(
 
             let citizen = Citizen {
                 name: name_rng.generate_name(),
-                birthday: birthday,
+                birthday,
                 days_since_meal: 0
             };
             match roll_chance(50) {
@@ -322,7 +326,7 @@ fn init_citizens(
                 false => commands.spawn((citizen, CitizenOf { colony }, Female)),
             };
 
-            event_writer.send(CitizenCreated { colony: colony });
+            event_writer.send(CitizenCreated { age, colony });
         }
 
         commands.entity(colony).insert(Population::default());
@@ -331,24 +335,25 @@ fn init_citizens(
 
 #[derive(Event)]
 pub struct CitizenCreated {
+    pub age: usize,
     pub colony: Entity,
 }
 
 fn update_population(
     mut event_reader: EventReader<CitizenCreated>,
-    mut populations: Query<(&mut Population, &Parent)>,
+    mut populations: Query<(Entity, &mut Population)>,
     citizens: Query<(&Citizen, &CitizenOf)>,
     game_date: Res<GameDate>,
 ) {
     for event in event_reader.read() {
-        for (mut population, colony) in &mut populations.iter_mut() {
-            if colony.get() == event.colony {
+        for (colony, mut population) in &mut populations.iter_mut() {
+            if colony == event.colony {
                 population.count += 1;
 
                 let all_citizen_ages: Vec<usize> = citizens
                     .iter()
                     .filter_map(|(citizen, citizen_of)| {
-                        if citizen_of.colony == colony.get() {
+                        if citizen_of.colony == colony {
                             Some(game_date.date.years_since(citizen.birthday).unwrap() as usize)
                         } else {
                             None
