@@ -1,14 +1,11 @@
 
-use std::{collections::HashMap, time::Duration};
-
-use bevy::{prelude::*, ecs::query::{self, QueryData}, reflect::List};
+use std::collections::HashMap;
+use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui::{Color32, Window, Ui}};
 use chrono::NaiveDate;
-use egui_plot::{Plot, BarChart, Legend, Bar, PlotPoint, PlotPoints, Line};
-
-use crate::{SimulationState, time::GameDate};
-
-use super::{population::{Citizen, CitizenOf, CitizenCreated, Population, self}, init_colonies, WorldEntity, food::{CarbCreated, MeatCreated, MeatConsumed, CarbConsumed, FoodCreated, CarbResource, MeatResource, FoodResource, ResourceOf}};
+use egui_plot::{Plot, BarChart, Legend, Bar, PlotPoint, PlotPoints};
+use crate::{config::ThirdLifeConfig, time::GameDate, SimulationState};
+use super::{population::{Citizen, CitizenOf, CitizenCreated, Population}, init_colonies, WorldEntity, food::{CarbResource, MeatResource, FoodResource, ResourceOf}};
 
 
 pub struct WorldsUiPlugin;
@@ -43,6 +40,7 @@ struct PopulationHistorgram {
     count: usize,
     average_age: usize,
     ages: HashMap<usize, usize>,
+    average_children_per_mother: f32, 
 }
 
 #[derive(Component)]
@@ -89,7 +87,7 @@ impl WorldUiBundle {
             ui: WorldUi,
             name: WorldUiName(name),
             entity: WorldUiEntity(entity),
-            pop: PopulationHistorgram { count: 0, average_age: 0, ages: HashMap::new() },
+            pop: PopulationHistorgram { count: 0, average_age: 0, ages: HashMap::new(), average_children_per_mother: 0.0},
             meat_stor: MeatStorage::new(),
             carb_stor: CarbStorage::new(),
             food_stor: FoodStorage::new() 
@@ -108,17 +106,22 @@ fn init_worlds_windows(
 
 fn display_world_uis(
     mut contexts: EguiContexts,
+    config: Res<ThirdLifeConfig>,
+    game_date: Res<GameDate>,
     ui_data: Query<(&WorldUiName, &PopulationHistorgram, &MeatStorage, &CarbStorage, &FoodStorage)>,
 ) {
     for (world, pop, meat_stor, carb_stor, food_stor) in &ui_data {
         let name = &world.0;
         Window::new(format!("Window of {name}"))
             .show(contexts.ctx_mut(), |ui| {
+                let start_date = NaiveDate::from_ymd_opt(config.starting_day().year(),config.starting_day().month(), config.starting_day().day()).unwrap();
+                ui.label(format!("Years Elapsed:{}", game_date.date.years_since(start_date).unwrap()));
+                ui.separator();
                 meats_storage(ui, &meat_stor);
                 carbs_storage(ui, &carb_stor);
                 food_storage(ui, &food_stor);
                 ui.separator();
-                general_pop(ui, &pop.count, &pop.average_age);
+                general_pop(ui, &pop.count, &pop.average_age, &pop.average_children_per_mother);
                 ui.separator();
                 age_histogram(name, ui, &pop.ages);
             });
@@ -176,6 +179,7 @@ fn update_general_pop(
             Some(p) => {
                 p.count = population.count;
                 p.average_age = population.average_age;
+                p.average_children_per_mother = population.average_children_per_mother;
             }
             None => ()
         }
@@ -186,10 +190,12 @@ fn general_pop(
     ui: &mut Ui,
     count: &usize,
     average_age: &usize,
+    average_children_per_mother: &f32,
 ) {
     ui.horizontal(|ui| {
         ui.label(format!("Pop count: {count}"));
         ui.label(format!("Average Age: {average_age}"));
+        ui.label(format!("Average Children per Mother: {average_children_per_mother}"));
     });
 }
 

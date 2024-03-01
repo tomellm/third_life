@@ -4,10 +4,9 @@ use crate::{
     SimulationState,
 };
 use bevy::prelude::*;
-use bevy_egui::{egui::Window, EguiContexts};
 use chrono::{Datelike, NaiveDate};
 use rand::{thread_rng, Rng};
-use rand_distr::{num_traits::Float, Distribution, SkewNormal};
+use rand_distr::{Distribution, SkewNormal};
 use rnglib::{Language, RNG};
 
 use super::{init_colonies, WorldColony, config::WorldsConfig, WorldEntity};
@@ -30,7 +29,6 @@ impl Plugin for PopulationPlugin {
                 init_pregnancies,
                 citizen_births,
                 update_population,
-                //population_info_windows,
             )
                 .run_if(in_state(SimulationState::Running)),
         )
@@ -42,6 +40,7 @@ impl Plugin for PopulationPlugin {
 pub struct Population {
     pub count: usize,
     pub average_age: usize,
+    pub average_children_per_mother: f32,
 }
 
 #[derive(Component, PartialEq, Clone)]
@@ -58,7 +57,9 @@ pub struct CitizenOf {
 }
 
 #[derive(Component)]
-struct Female;
+struct Female{
+    pub children_had: u8,
+}
 
 #[derive(Component)]
 struct Male;
@@ -78,25 +79,16 @@ pub struct Spouse {
     pub spouse: Entity,
 }
 
-fn population_info_windows(mut contexts: EguiContexts, populations: Query<&Population>) {
-    for population in &populations {
-        Window::new(format!("Population {}", population.count)).show(contexts.ctx_mut(), |ui| {
-            ui.label(format!("Population: {}", population.count));
-            ui.label(format!("Average Age: {}", population.average_age));
-        });
-    }
-}
-
 fn citizen_births(
     mut commands: Commands,
     mut event_reader: EventReader<DateChanged>,
     mut event_writer: EventWriter<CitizenCreated>,
-    mut pregnant_women: Query<(Entity, &mut Citizen, &mut Pregnancy, &CitizenOf), With<Pregnancy>>,
+    mut pregnant_women: Query<(Entity, &mut Citizen, &mut Pregnancy, &CitizenOf, &mut Female), With<Pregnancy>>,
     colonies: Query<Entity, With<WorldColony>>,
     game_date: Res<GameDate>,
 ) {
     for _ in event_reader.read() {
-        for (entity, _, pregnancy, citizen_of) in &mut pregnant_women.iter_mut() {
+        for (entity, _, pregnancy, citizen_of, mut female) in &mut pregnant_women.iter_mut() {
             if pregnancy.baby_due_date == game_date.date {
                 for colony in &colonies {
                     if citizen_of.colony == colony {
@@ -110,10 +102,12 @@ fn citizen_births(
 
                         match roll_chance(50) {
                             true => commands.spawn((new_born, CitizenOf { colony }, Male)),
-                            false => commands.spawn((new_born, CitizenOf { colony }, Female)),
+                            false => commands.spawn((new_born, CitizenOf { colony }, Female{children_had: 0})),
                         };
 
-                        event_writer.send(CitizenCreated { age: 0, colony });
+                        event_writer.send(CitizenCreated { age: 0, colony: colony });
+
+                        female.children_had += 1;
                     }
                 }
                 commands.entity(entity).remove::<Pregnancy>();
@@ -228,10 +222,10 @@ fn pregnancy_chance(age: u8) -> bool {
 }
 
 fn pregnancy_desire() -> bool {
-    let economy: f32 = thread_rng().gen_range(0.0..=1.0);
-    let urbanization: f32 = thread_rng().gen_range(0.0..=1.0);
-    let demand: f32 = thread_rng().gen_range(0.0..=1.0);
-    let survivability: f32 = thread_rng().gen_range(0.0..=1.0);
+    let economy: f32 = 0.5;
+    let urbanization: f32 = 0.7;
+    let demand: f32 = 2.1;
+    let survivability: f32 = 0.4;
 
     let mut preg_chance =
         2.1 * urbanization * (economy / economy) * demand * (1.0 - urbanization) * survivability;
@@ -323,7 +317,7 @@ fn init_citizens(
             };
             match roll_chance(50) {
                 true => commands.spawn((citizen, CitizenOf { colony }, Male)),
-                false => commands.spawn((citizen, CitizenOf { colony }, Female)),
+                false => commands.spawn((citizen, CitizenOf { colony }, Female{children_had: 0})),
             };
 
             event_writer.send(CitizenCreated { age, colony });
@@ -343,6 +337,7 @@ fn update_population(
     mut event_reader: EventReader<CitizenCreated>,
     mut populations: Query<(Entity, &mut Population)>,
     citizens: Query<(&Citizen, &CitizenOf)>,
+    women: Query<(&Citizen, &CitizenOf, &Female)>,
     game_date: Res<GameDate>,
 ) {
     for event in event_reader.read() {
@@ -361,6 +356,19 @@ fn update_population(
                     })
                     .collect();
 
+                let all_women_children_had: Vec<f32> = women
+                    .iter()
+                    .filter_map(|(_, citizen_of, female)| {
+                        if citizen_of.colony == colony {
+                            Some(female.children_had as f32)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                population.average_children_per_mother = 
+                    all_women_children_had.iter().sum::<f32>() / all_women_children_had.len() as f32;
+                
                 population.average_age =
                     all_citizen_ages.iter().sum::<usize>() / all_citizen_ages.len();
             }
