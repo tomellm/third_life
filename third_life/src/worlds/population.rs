@@ -48,6 +48,8 @@ pub struct Population {
 pub struct Citizen {
     pub name: String,
     pub birthday: NaiveDate,
+    //TODO: Optimize this and yell at thomas for not letting me earlier.
+    pub days_since_meal: usize,
 }
 
 #[derive(Component)]
@@ -103,6 +105,7 @@ fn citizen_births(
                         let new_born = Citizen {
                             name: name_rng.generate_name(),
                             birthday: game_date.date,
+                            days_since_meal: 0
                         };
 
                         match roll_chance(50) {
@@ -312,6 +315,7 @@ fn init_citizens(
             let citizen = Citizen {
                 name: name_rng.generate_name(),
                 birthday: birthday,
+                days_since_meal: 0
             };
             match roll_chance(50) {
                 true => commands.spawn((citizen, CitizenOf { colony }, Male)),
