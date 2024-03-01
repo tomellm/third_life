@@ -42,14 +42,14 @@ impl Plugin for FoodPlugin {
 #[derive(Component)]
 pub struct Employed;
 
-#[derive(Component)]
+#[derive(Component, PartialEq, Eq, Hash)]
 pub struct ResourceOf {
     pub colony: Entity,
 }
 
 #[derive(Component)]
 pub struct FoodResource {
-    amount: f32,
+    pub amount: f32,
 }
 
 #[derive(Component)]
@@ -101,6 +101,56 @@ fn init_food(mut commands: Commands, colonies: Query<Entity, With<WorldColony>>)
                 harvested: 0.0,
             },
             WheatFarmOf { colony },
+        ));
+        commands.spawn((
+            WheatFarm {
+                size: 17.4,
+                harvested: 0.0,
+            },
+            WheatFarmOf { colony },
+        ));
+        commands.spawn((
+            WheatFarm {
+                size: 17.4,
+                harvested: 0.0,
+            },
+            WheatFarmOf { colony },
+        ));
+
+        commands.spawn((
+            WheatFarm {
+                size: 17.4,
+                harvested: 0.0,
+            },
+            WheatFarmOf { colony },
+        ));
+        commands.spawn((
+            WheatFarm {
+                size: 17.4,
+                harvested: 0.0,
+            },
+            WheatFarmOf { colony },
+        ));
+        commands.spawn((
+            WheatFarm {
+                size: 17.4,
+                harvested: 0.0,
+            },
+            WheatFarmOf { colony },
+        ));
+        commands.spawn((
+            CowFarm {
+                size: 500.0,
+                harvested: 0.0,
+            },
+            CowFarmOf { colony },
+        ));
+        commands.spawn((
+            CowFarm {
+                size: 500.0,
+                harvested: 0.0,
+            },
+            CowFarmOf { colony },
         ));
         commands.spawn((
             CowFarm {
@@ -365,7 +415,7 @@ fn work_cow_farm(
                     for (mut meat_resource, resource_of) in meat_resources.iter_mut() {
                         if resource_of.colony == colony {
                             //todo: need to figure out 1 day of work= how many kilos meat.
-                            meat_resource.amount += harvested_amount * 1000.0;
+                            meat_resource.amount += harvested_amount * 2000.0;
                         }
                     }
                 }
@@ -389,7 +439,7 @@ fn cook_food(
             acc
         },
     );
-    
+
     for (entity, _, resource_of) in carb_resources.iter_mut() {
         colony_food_resources_map
             .get_mut(&resource_of.colony)
@@ -407,14 +457,22 @@ fn cook_food(
     }
 
     for (colony, resource_entities) in colony_food_resources_map {
-        let (_, mut food_resource, _) = food_resources.get_mut(*resource_entities.get("food").unwrap()).unwrap(); 
-        let (_, mut carb_resource, _) = carb_resources.get_mut(*resource_entities.get("carb").unwrap()).unwrap(); 
-        let (_, mut meat_resource, _) = meat_resources.get_mut(*resource_entities.get("meat").unwrap()).unwrap(); 
+        let (_, mut food_resource, _) = food_resources
+            .get_mut(*resource_entities.get("food").unwrap())
+            .unwrap();
+        let (_, mut carb_resource, _) = carb_resources
+            .get_mut(*resource_entities.get("carb").unwrap())
+            .unwrap();
+        let (_, mut meat_resource, _) = meat_resources
+            .get_mut(*resource_entities.get("meat").unwrap())
+            .unwrap();
 
-        if carb_resource.amount > 100.0 && meat_resource.amount > 100.0 {
-            carb_resource.amount -= 100.0;
-            meat_resource.amount -= 100.0;
-            food_resource.amount += 180.0;
+        let food_cook_multiplier = 5.0;
+        if carb_resource.amount > 100.0 * food_cook_multiplier 
+            && meat_resource.amount > 100.0 * food_cook_multiplier {
+            carb_resource.amount -= 100.0 * food_cook_multiplier;
+            meat_resource.amount -= 100.0 * food_cook_multiplier;
+            food_resource.amount += 180.0 * food_cook_multiplier;
         }
     }
 }

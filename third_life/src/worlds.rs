@@ -1,6 +1,7 @@
 mod config;
 mod food;
 mod population;
+mod food_consumption;
 
 use std::{collections::HashMap, ops::Deref};
 
@@ -18,9 +19,7 @@ use crate::{
 };
 
 use self::{
-    config::{WorldsConfig, WorldsConfigPlugin},
-    food::FoodPlugin,
-    population::{Citizen, CitizenOf, PopulationPlugin},
+    config::{WorldsConfig, WorldsConfigPlugin}, food_consumption::ConsumptionPlugin, food::FoodPlugin, population::{Citizen, CitizenOf, PopulationPlugin}
 };
 use crate::time::GameDate;
 
@@ -29,7 +28,7 @@ pub struct WorldsPlugin;
 impl Plugin for WorldsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(SimulationState::Running), init_colonies)
-            .add_plugins((WorldsConfigPlugin, PopulationPlugin, FoodPlugin))
+            .add_plugins((WorldsConfigPlugin, PopulationPlugin, FoodPlugin, ConsumptionPlugin))
             .add_systems(
                 Update,
                 display_colonies.run_if(in_state(SimulationState::Running)),
