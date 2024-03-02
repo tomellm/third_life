@@ -42,11 +42,11 @@
 
 extern crate proc_macro;
 use core::panic;
-use std::{collections::HashMap, fs, ops::Deref, fmt::Debug};
-use proc_macro::TokenStream;
+use std::{collections::HashMap, fs, fmt::Debug};
+
 
 use bevy::{prelude::*, reflect::Map};
-use bevy_egui::{egui::{Window, TextBuffer}, EguiContexts};
+use bevy_egui::{egui::{Window}, EguiContexts};
 use proc_macros::{Config, ConfigFile};
 use serde::{Deserialize, de::DeserializeOwned};
 

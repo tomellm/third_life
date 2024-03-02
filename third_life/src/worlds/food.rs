@@ -1,15 +1,15 @@
 use std::usize;
 
 use crate::{time::DateChanged, SimulationState};
-use bevy::{prelude::*, reflect::List, transform::commands, utils::HashMap};
+use bevy::{prelude::*, reflect::List, utils::HashMap};
 use bevy_egui::{
-    egui::{Color32, Ui, Window},
+    egui::{Window},
     EguiContexts,
 };
 
 use super::{
     init_colonies,
-    population::{self, Citizen, CitizenOf, Population},
+    population::components::{CitizenOf},
     WorldColony,
 };
 
@@ -172,7 +172,7 @@ fn init_food(mut commands: Commands, colonies: Query<Entity, With<WorldColony>>)
 
 fn display_food(
     mut contexts: EguiContexts,
-    colonies: Query<Entity, With<WorldColony>>,
+    _colonies: Query<Entity, With<WorldColony>>,
     food_resources: Query<(&FoodResource, &ResourceOf)>,
     carb_resources: Query<(&CarbResource, &ResourceOf)>,
     meat_resources: Query<(&MeatResource, &ResourceOf)>,
@@ -255,12 +255,14 @@ fn get_farm_workers(
     for needs_worker_event in event_reader.read() {
         for (citizen, citizen_of) in free_citizens.iter() {
             if citizen_of.colony == needs_worker_event.colony {
-                commands.entity(citizen).insert((
-                    WheatFarmer {
-                        farm: needs_worker_event.farm,
-                    },
-                    Employed,
-                ));
+                commands.get_entity(citizen).map(|mut e| {
+                    e.try_insert((
+                        WheatFarmer {
+                            farm: needs_worker_event.farm,
+                        },
+                        Employed,
+                    ));
+                });
                 break;
             }
         }
@@ -376,12 +378,14 @@ fn get_cow_farm_workers(
     for needs_worker_event in event_reader.read() {
         for (citizen, citizen_of) in free_citizens.iter() {
             if citizen_of.colony == needs_worker_event.colony {
-                commands.entity(citizen).insert((
-                    CowFarmer {
-                        farm: needs_worker_event.farm,
-                    },
-                    Employed,
-                ));
+                commands.get_entity(citizen).map(|mut e| {
+                    e.try_insert((
+                        CowFarmer {
+                            farm: needs_worker_event.farm,
+                        },
+                        Employed,
+                    ));
+                });
                 break;
             }
         }

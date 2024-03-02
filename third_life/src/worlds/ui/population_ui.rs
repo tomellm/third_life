@@ -1,11 +1,13 @@
 
-use crate::worlds::ui::components::*;
+use crate::{worlds::{ui::components::*, population::{events::{CitizenCreated, CitizenDied, DeathReason}, components::{Citizen, CitizenOf, Population}}}, time::DateChanged};
 use std::collections::HashMap;
 use bevy::{prelude::*, reflect::List};
 use bevy_egui::{EguiContexts, egui::{Color32, Ui}};
-use egui_plot::{Plot, BarChart, Legend, Bar};
+use chrono::NaiveDate;
+use egui_plot::{Plot, BarChart, Legend, Bar, Line};
 use crate::time::GameDate;
-use super::super::{population::{Citizen, CitizenOf, CitizenCreated, Population}, init_colonies, WorldEntity, food::{CarbResource, MeatResource, FoodResource, ResourceOf}};
+
+use super::usize_to_plotpoints;
 
 pub fn add_citizens_to_population_histogram(
     mut pop_histograms: Query<(&WorldUiEntity, &mut PopulationHistorgram)>,
@@ -23,7 +25,6 @@ pub fn add_citizens_to_population_histogram(
 }
 
 pub fn update_ages(
-    mut contexts: EguiContexts,
     citizens: Query<(&Citizen, &CitizenOf)>,
     game_date: Res<GameDate>,
     mut populations: Query<(&WorldUiEntity, &mut PopulationHistorgram)>
@@ -101,4 +102,51 @@ pub fn age_histogram(
         .allow_drag(false)
         .show(ui, |plot_ui| plot_ui.bar_chart(chart))
         .response;
+}
+
+pub fn death_lines(
+    planet_name: &str,
+    ui: &mut Ui,
+    deaths: &PopulationDeathLines
+) {
+    Plot::new(format!("Deaths on planet {planet_name}"))
+        .height(150.).width(400.)
+        .allow_zoom(false).allow_scroll(false).allow_drag(false)
+        .show(ui, |plot_ui| {
+            plot_ui.line(
+                Line::new(usize_to_plotpoints(&deaths.old_age_deaths))
+                    .color(Color32::from_rgb(0, 0, 255))
+                    .name("old age")
+            );
+            plot_ui.line(
+                Line::new(usize_to_plotpoints(&deaths.starvation_deaths))
+                    .color(Color32::from_rgb(255, 0, 0))
+                    .name("starvation")
+            );
+        });
+}
+
+pub fn death_events_listener(
+    time: Res<Time>,
+    mut events: EventReader<CitizenDied>,
+    mut uis: Query<(&WorldUiEntity, &mut PopulationDeathLines)>
+) {
+    let mapped_events = events.read().into_iter()
+        .fold(HashMap::new(), |mut acc: HashMap<Entity, (usize, usize)>, e| {
+            let mut col_map = acc.entry(e.colony).or_insert((0, 0));
+            match e.reason {
+                DeathReason::OldAge => col_map.0 += 1,
+                DeathReason::Starvation => col_map.1 += 1
+            };
+            acc
+        });
+
+    for (WorldUiEntity(colony), mut lines) in uis.iter_mut() {
+        lines.new_step(time.delta());
+        let (old_age, starvation) = mapped_events.get(&colony)
+            .map(|(old_age, starvation)|(*old_age, *starvation))
+            .unwrap_or((0, 0));
+        *lines.old_age_deaths.last_mut().unwrap() += old_age;
+        *lines.starvation_deaths.last_mut().unwrap() += starvation;
+    }
 }
