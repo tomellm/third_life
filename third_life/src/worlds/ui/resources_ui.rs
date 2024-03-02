@@ -1,4 +1,4 @@
-use crate::worlds::ui::components::*;
+use crate::worlds::{ui::components::*, food::{ResourceOf, CarbResource, MeatResource, FoodResource}};
 
 use core::panic;
 use std::collections::HashMap;
@@ -7,7 +7,8 @@ use bevy_egui::{EguiContexts, egui::{Color32, Window, Ui}};
 use chrono::NaiveDate;
 use egui_plot::{Plot, BarChart, Legend, Bar, PlotPoint, PlotPoints, Line};
 use crate::{config::ThirdLifeConfig, time::GameDate, SimulationState};
-use super::super::{population::{Citizen, CitizenOf, CitizenCreated, Population}, init_colonies, WorldEntity, food::{CarbResource, MeatResource, FoodResource, ResourceOf}};
+
+use super::f32_to_plotpoints;
 
 
 pub fn resources_changed(
@@ -66,13 +67,13 @@ pub fn resources_storage(
     ui.heading("Resources");
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
-            ui.label(format!("Meat in storage {:.2} {}", stor.meat.last().unwrap(), stor.meat.len()));
+            ui.label(format!("Meat in storage {:.2}", stor.meat.last().unwrap()));
             plot_resource_line(format!("Meat Line {name}"), ui, &stor.meat);
-            ui.label(format!("Carbs in storage {:.2} {}", stor.carb.last().unwrap(), stor.carb.len()));
+            ui.label(format!("Carbs in storage {:.2}", stor.carb.last().unwrap()));
             plot_resource_line(format!("Carb Line {name}"), ui, &stor.carb);
         });
         ui.vertical(|ui| {
-            ui.label(format!("Food in storage {:.2} {}", stor.food.last().unwrap(), stor.food.len()));
+            ui.label(format!("Food in storage {:.2}", stor.food.last().unwrap()));
             plot_resource_line(format!("Food Line {name}"), ui, &stor.food);
         });
     });
@@ -95,11 +96,4 @@ pub fn plot_resource_line(
         });
 }
 
-pub fn f32_to_plotpoints(
-    vec: &Vec<f32>
-) -> PlotPoints {
-    let vec = vec.into_iter().enumerate()
-        .map(|(i, n)| PlotPoint::new(i as f64, *n))
-        .collect::<Vec<_>>();
-    PlotPoints::Owned(vec)
-}
+

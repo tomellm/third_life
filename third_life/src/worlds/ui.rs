@@ -2,7 +2,6 @@ mod components;
 mod population_ui;
 mod resources_ui;
 
-
 use components::*;
 use population_ui::*;
 use resources_ui::*;
@@ -14,7 +13,8 @@ use bevy_egui::{EguiContexts, egui::{Color32, Window, Ui}};
 use chrono::NaiveDate;
 use egui_plot::{Plot, BarChart, Legend, Bar, PlotPoint, PlotPoints, Line};
 use crate::{config::ThirdLifeConfig, time::GameDate, SimulationState};
-use super::{population::{Citizen, CitizenOf, CitizenCreated, Population}, init_colonies, WorldEntity, food::{CarbResource, MeatResource, FoodResource, ResourceOf}};
+
+use super::{init_colonies, WorldEntity};
 
 
 pub struct WorldsUiPlugin;
@@ -28,7 +28,8 @@ impl Plugin for WorldsUiPlugin {
                     add_citizens_to_population_histogram,
                     resources_changed,
                     update_ages,
-                    update_general_pop
+                    update_general_pop,
+                    death_events_listener
             ).run_if(in_state(SimulationState::Running)));
     }
 }
@@ -50,9 +51,14 @@ fn display_world_uis(
     mut contexts: EguiContexts,
     config: Res<ThirdLifeConfig>,
     game_date: Res<GameDate>,
-    ui_data: Query<(&WorldUiName, &PopulationHistorgram, &ResourceStorage)>,
+    ui_data: Query<(
+        &WorldUiName,
+        &ResourceStorage,
+        &PopulationHistorgram,
+        &PopulationDeathLines,
+    )>,
 ) {
-    for (world, pop, stor) in &ui_data {
+    for (world, stor, pop, death) in &ui_data {
         let name = &world.0;
         Window::new(format!("Window of {name}"))
             .show(contexts.ctx_mut(), |ui| {
@@ -64,10 +70,28 @@ fn display_world_uis(
                 general_pop(ui, &pop.count, &pop.average_age, &pop.average_children_per_mother);
                 ui.separator();
                 age_histogram(name, ui, &pop.ages);
+                ui.separator();
+                death_lines(name, ui, death);
             });
     }
 }
 
 
 
+pub fn f32_to_plotpoints(
+    vec: &Vec<f32>
+) -> PlotPoints {
+    let vec = vec.into_iter().enumerate()
+        .map(|(i, n)| PlotPoint::new(i as f64, *n))
+        .collect::<Vec<_>>();
+    PlotPoints::Owned(vec)
+}
 
+pub fn usize_to_plotpoints(
+    vec: &Vec<usize>
+) -> PlotPoints {
+    let vec = vec.into_iter().enumerate()
+        .map(|(i, n)| PlotPoint::new(i as f64, *n as f64))
+        .collect::<Vec<_>>();
+    PlotPoints::Owned(vec)
+}

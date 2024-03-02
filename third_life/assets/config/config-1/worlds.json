@@ -38,8 +38,8 @@
             },
             "environment" : {
                 "urbanization": 0.75,
-                "env_health": 0.5,
-                "ecosystem_vitylity": 0.5
+                "env_health": 0.01,
+                "ecosystem_vitylity": 0.01
             }
         }
     ]

@@ -13,7 +13,7 @@ use crate::{
 
 use self::{
     config::{WorldsConfig, WorldsConfigPlugin},
-    food::FoodPlugin, population::{PopulationPlugin, Population}, ui::WorldsUiPlugin, food_consumption::ConsumptionPlugin
+    food::FoodPlugin, population::{PopulationPlugin, components::Population}, ui::WorldsUiPlugin, food_consumption::ConsumptionPlugin
 };
 
 pub struct WorldsPlugin;
