@@ -45,7 +45,7 @@ use core::panic;
 use std::{collections::HashMap, fs, fmt::Debug};
 
 
-use bevy::{prelude::*, reflect::Map};
+use bevy::{prelude::*, asset::{AssetLoader, io::Reader, LoadContext, AsyncReadExt}, utils::{thiserror::Error, BoxedFuture}};
 use bevy_egui::{egui::{Window}, EguiContexts};
 use proc_macros::{Config, ConfigFile};
 use serde::{Deserialize, de::DeserializeOwned};
@@ -71,8 +71,11 @@ impl Plugin for ConfigurationPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<AllConfigReaders>()
+            .init_resource::<LoadingConfigFileAssets>()
             .add_event::<RegisterConfigReaderEvent>()
             .add_event::<ConfigReaderFinishedEvent>()
+            .init_asset_loader::<ConfigFileAssetLoader>()
+            .init_asset::<ConfigFileAsset>()
             .add_systems(Update, (show_config_selection).run_if(
                     in_state(SimulationState::ConfigSelection)
             ))
@@ -113,7 +116,7 @@ pub struct SelectedConfigPath(pub String);
 
 impl SelectedConfigPath {
     pub fn new_std(folder: String) -> Self {
-        Self(format!("assets/config/{folder}"))
+        Self(format!("config/{folder}"))
     }
 }
 
@@ -189,6 +192,42 @@ fn recive_config_loaded_events(
     }
 }
 
+#[derive(Resource, Default)]
+struct LoadingConfigFileAssets {
+    files: HashMap<String, Handle<ConfigFileAsset>>
+}
+
+#[derive(Asset, TypePath, Debug, Deserialize)]
+struct ConfigFileAsset {
+    file: String
+}
+
+#[derive(Default)]
+struct ConfigFileAssetLoader;
+
+impl AssetLoader for ConfigFileAssetLoader {
+    type Asset = ConfigFileAsset;
+    type Settings = ();
+    type Error = std::io::Error;
+    fn load<'a>(
+        &'a self,
+        reader: &'a mut Reader,
+        _settings: &'a (),
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
+        Box::pin(async move {
+            let mut str = String::new();
+            reader.read_to_string(&mut str).await.unwrap();
+            let asset = ConfigFileAsset { file: str };
+            Ok(asset)
+        })
+    }
+    fn extensions(&self) -> &[&str] {
+        &["json"]
+    }
+
+}
+
 
 /// This trait allows any struct to be loaded as a configuration file before the
 /// simulation is started. The only thing that needs to be implemented is the 
@@ -205,23 +244,12 @@ pub trait ConfigurationLoader: Sized + DeserializeOwned + Debug + Resource {
     fn add_configuration(app: &mut App) {
         app
             .add_systems(Startup, Self::register())
-            .add_systems(OnEnter(SimulationState::LoadingConfig), Self::notify_done());
+            .add_systems(OnEnter(SimulationState::LoadingConfig), Self::start_loading())
+            .add_systems(Update,  (Self::notify_done()).run_if(in_state(SimulationState::LoadingConfig)));
     }
 
-    fn load(path: String) -> Self{
-        let file = fs::read_to_string(
-            format!("{}/{}.json", path, Self::path_with_name())
-        ).expect(r#"
-            The file {path}.json could not be found.
-        "#);
-
-        serde_json::from_str::<Self>(&file).expect(r#"
-            The file parsed file contains a mistake and could thus not be
-            parsed plase check that the formatting of the file is correct and
-            matches the type you are trying to parse it to!
-        "#)
-    }
-
+    /// Registers the loader so that [`crate::SimulationState`] is only changed
+    /// if all registerd loaders have answered back
     fn register() -> impl Fn(
         EventWriter<RegisterConfigReaderEvent>
     ) + Send + Sync {
@@ -232,17 +260,72 @@ pub trait ConfigurationLoader: Sized + DeserializeOwned + Debug + Resource {
         }
     }
 
+    /// Tells bevy to start loading the asset through the [`bevy_asset::server::AssetServer`]
+    /// and stores the handle to  the [`LoadingConfigFileAssets`] resource 
+    fn start_loading() -> impl Fn(
+        Res<SelectedConfigPath>, Res<AssetServer>, ResMut<LoadingConfigFileAssets>
+    ) + Send + Sync {
+        |
+            selected_config: Res<SelectedConfigPath>,
+            asset_server: Res<AssetServer>,
+            mut loading_assets: ResMut<LoadingConfigFileAssets>
+        | {
+            let handle = asset_server.load(format!(
+                    "{}/{}.json",
+                    selected_config.0.clone(),
+                    Self::path_with_name()
+            ));
+            let name = Self::path_with_name().to_string();
+            let None = loading_assets.as_mut()
+                .files.insert(name.clone(), handle)
+            else {
+                panic!(r#"\n
+                       The file {name} is already beeing loaded, please check
+                       why its beeing loaded for a second time.\n
+                "#);
+            };
+
+        }
+    }
+
+    /// Checks wheter the respective asset has finished loading
+    ///
+    /// Does this by getting the handle from the [`LoadingConfigFileAssets`] resource,
+    /// then looking at the [`ConfigFileAsset`] assets and finding the right one
+    /// if [`LoadingConfigFileAssets`] contains the key and the asset is loaded 
+    /// the handle is removed from [`LoadingConfigFileAssets`] and a resource of 
+    /// the respective type is added to the Simulation.
+    ///
+    /// Lastly the finished event is cast out.
     fn notify_done() -> impl Fn(
-        Commands,
-        EventWriter<ConfigReaderFinishedEvent>,
-        Res<SelectedConfigPath>
+        Commands, EventWriter<ConfigReaderFinishedEvent>, 
+        ResMut<LoadingConfigFileAssets>, Res<Assets<ConfigFileAsset>>
     ) + Send + Sync {
         |
             mut commands: Commands,
             mut writer: EventWriter<ConfigReaderFinishedEvent>,
-            selected_config: Res<SelectedConfigPath>
+            mut loading_assets: ResMut<LoadingConfigFileAssets>,
+            config_assets: Res<Assets<ConfigFileAsset>>,
         | {
-            commands.insert_resource(Self::load(selected_config.0.clone()));
+            let conf_name = Self::path_with_name().to_string();
+            
+            let Some(handle) = loading_assets.files.get(&conf_name) else {
+                return;
+            };
+            
+            let Some(ConfigFileAsset{ file }) = config_assets.get(handle) else {
+                return;
+            };
+
+            loading_assets.as_mut().files.remove(&conf_name);
+
+            let config_resource = serde_json::from_str::<Self>(&file).expect(r#"\n
+                The file parsed file contains a mistake and could thus not be
+                parsed plase check that the formatting of the file is correct and
+                matches the type you are trying to parse it to!\n
+            "#);
+
+            commands.insert_resource(config_resource);
             writer.send(ConfigReaderFinishedEvent::new(Self::path_with_name()));
         }
     }
