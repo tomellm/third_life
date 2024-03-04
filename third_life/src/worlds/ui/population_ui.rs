@@ -1,5 +1,5 @@
 
-use crate::{worlds::{ui::components::*, population::{events::{CitizenCreated, CitizenDied, DeathReason}, components::{Citizen, CitizenOf, Population}}}, time::DateChanged};
+use crate::{worlds::{ui::components::*, population::{events::{CitizenCreated, CitizenDied, DeathReason}, components::{Citizen, CitizenOf, Population}}}, time::DateChanged, SimulationState};
 use std::collections::HashMap;
 use bevy::{prelude::*, reflect::List};
 use bevy_egui::{EguiContexts, egui::{Color32, Ui}};
@@ -8,6 +8,20 @@ use egui_plot::{Plot, BarChart, Legend, Bar, Line};
 use crate::time::GameDate;
 
 use super::usize_to_plotpoints;
+
+pub struct PopulationUiPlugin;
+
+impl Plugin for PopulationUiPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(Update, (
+                    add_citizens_to_population_histogram,
+                    update_ages,
+                    update_general_pop,
+                    death_events_listener
+            ).run_if(in_state(SimulationState::Running)));
+    }
+}
 
 pub fn add_citizens_to_population_histogram(
     mut pop_histograms: Query<(&WorldUiEntity, &mut PopulationHistorgram)>,
@@ -29,7 +43,7 @@ pub fn update_ages(
     game_date: Res<GameDate>,
     mut populations: Query<(&WorldUiEntity, &mut PopulationHistorgram)>
 ) {
-    let mut map = populations.iter_mut().map(|(e, p)| (e.0, p)).collect::<HashMap<_, _>>();
+    let map = populations.iter_mut().map(|(e, p)| (e.0, p)).collect::<HashMap<_, _>>();
     let populations_map = citizens.into_iter().fold(
         HashMap::new(),
         |mut acc: HashMap<Entity, HashMap<usize, usize>>, (citizen, citizen_of)| {
@@ -111,6 +125,7 @@ pub fn death_lines(
 ) {
     Plot::new(format!("Deaths on planet {planet_name}"))
         .height(150.).width(400.)
+        .legend(Legend::default())
         .allow_zoom(false).allow_scroll(false).allow_drag(false)
         .show(ui, |plot_ui| {
             plot_ui.line(
@@ -133,7 +148,7 @@ pub fn death_events_listener(
 ) {
     let mapped_events = events.read().into_iter()
         .fold(HashMap::new(), |mut acc: HashMap<Entity, (usize, usize)>, e| {
-            let mut col_map = acc.entry(e.colony).or_insert((0, 0));
+            let col_map = acc.entry(e.colony).or_insert((0, 0));
             match e.reason {
                 DeathReason::OldAge => col_map.0 += 1,
                 DeathReason::Starvation => col_map.1 += 1

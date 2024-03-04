@@ -10,6 +10,17 @@ use crate::{config::ThirdLifeConfig, time::GameDate, SimulationState};
 
 use super::f32_to_plotpoints;
 
+pub struct ResourcesUiPlugin;
+
+impl Plugin for ResourcesUiPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(Update, (
+                    resources_changed,
+            ).run_if(in_state(SimulationState::Running)));
+    }
+}
+
 
 pub fn resources_changed(
     time: Res<Time>,

@@ -23,14 +23,8 @@ impl Plugin for WorldsUiPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(SimulationState::Running), init_worlds_windows.after(init_colonies))
-            .add_systems(Update, (
-                    display_world_uis,
-                    add_citizens_to_population_histogram,
-                    resources_changed,
-                    update_ages,
-                    update_general_pop,
-                    death_events_listener
-            ).run_if(in_state(SimulationState::Running)));
+            .add_systems(Update, (display_world_uis,).run_if(in_state(SimulationState::Running)))
+            .add_plugins((PopulationUiPlugin, ResourcesUiPlugin));
     }
 }
 
