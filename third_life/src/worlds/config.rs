@@ -22,10 +22,12 @@ pub struct WorldConfig {
     /// Name should be unique, since its used for identification of multiple 
     /// things.
     name: String,
+    world_position: (isize, isize),
     #[def(PopulationConfig::def_conf())]
     population: Option<PopulationConfig>,
     #[def(EnvironmentConfig::def_conf())]
-    environment: Option<EnvironmentConfig>
+    environment: Option<EnvironmentConfig>,
+    sprite: SpriteConfig,
 }
 
 /// Different parameters affecting the population directly
@@ -58,6 +60,15 @@ pub struct EnvironmentConfig {
     env_health: Option<f32>,
     #[def(1.)]
     ecosystem_vitylity: Option<f32>,
+}
+
+#[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
+pub struct SpriteConfig {
+    sprite_sheet: String,
+    frames: usize,
+    frames_layout: (usize, usize),
+    shape: (usize, usize),
+    animation_timer: f32
 }
 
 

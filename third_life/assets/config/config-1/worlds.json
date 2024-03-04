@@ -2,6 +2,7 @@
     "worlds": [
         {
             "name": "Earth",
+            "world_position": [-300, 0],
             "population": {
                 "size": 1000,
                 "location": 18.0,
@@ -12,10 +13,18 @@
                 "urbanization": 0.75,
                 "env_health": 0.5,
                 "ecosystem_vitylity": 0.5
+            },
+            "sprite": {
+                "sprite_sheet": "terran.png",
+                "frames": 60,
+                "frames_layout": [60, 1],
+                "shape": [48, 48],
+                "animation_timer": 0.1
             }
         },
         {
             "name": "Mars",
+            "world_position": [0, 0],
             "population": {
                 "size": 1000,
                "location": 18.0,
@@ -26,10 +35,18 @@
                 "urbanization": 0.75,
                 "env_health": 0.5,
                 "ecosystem_vitylity": 0.5
+            },
+            "sprite": {
+                "sprite_sheet": "desert.png",
+                "frames": 60,
+                "frames_layout": [60, 1],
+                "shape": [48, 48],
+                "animation_timer": 0.1
             }
         },
         {
             "name": "Saturn",
+            "world_position": [300, 0],
             "population": {
                 "size": 1000,
                 "location": 18.0,
@@ -40,6 +57,13 @@
                 "urbanization": 0.75,
                 "env_health": 0.01,
                 "ecosystem_vitylity": 0.01
+            },
+            "sprite": {
+                "sprite_sheet": "jungle.png",
+                "frames": 120,
+                "frames_layout": [120, 1],
+                "shape": [48, 48],
+                "animation_timer": 0.2
             }
         }
     ]

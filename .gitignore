@@ -5,4 +5,5 @@ Cargo.lock
 .vscode
 .idea
 
-**/assets/config/*
+third_life/assets/config/*
+!third_life/assets/config/config-1/

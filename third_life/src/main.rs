@@ -7,15 +7,19 @@ mod common;
 mod config;
 mod time;
 mod worlds;
+mod animation;
+mod ui;
 
 
 
+use animation::ThirdLifeAnimationPlugin;
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{
     EguiPlugin,
 };
 use config::ConfigurationPlugin;
 use time::TimeDatePlugin;
+use ui::ThridLifeUiPlugin;
 use worlds::WorldsPlugin;
 
 /// State of the simulation, manages the initial configuration load
@@ -55,6 +59,8 @@ fn main() {
             ConfigurationPlugin,
             TimeDatePlugin,
             WorldsPlugin,
+            ThridLifeUiPlugin,
+            ThirdLifeAnimationPlugin
         ))
         .run();
 }
