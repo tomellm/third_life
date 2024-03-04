@@ -55,6 +55,7 @@ fn display_world_uis(
     for (world, stor, pop, death) in &ui_data {
         let name = &world.0;
         Window::new(format!("Window of {name}"))
+            .default_open(false)
             .show(contexts.ctx_mut(), |ui| {
                 let start_date = NaiveDate::from_ymd_opt(config.starting_day().year(),config.starting_day().month(), config.starting_day().day()).unwrap();
                 ui.label(format!("Years Elapsed:{}", game_date.date.years_since(start_date).unwrap()));
