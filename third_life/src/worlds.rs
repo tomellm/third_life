@@ -2,7 +2,6 @@ mod config;
 mod food;
 mod population;
 mod ui;
-mod food_consumption;
 
 
 use bevy::prelude::*;
@@ -13,7 +12,7 @@ use crate::{
 
 use self::{
     config::{WorldsConfig, WorldsConfigPlugin, SpriteConfig},
-    food::FoodPlugin, population::{PopulationPlugin, components::Population}, ui::WorldsUiPlugin, food_consumption::ConsumptionPlugin
+    food::FoodPlugin, population::{PopulationPlugin, components::Population}, ui::WorldsUiPlugin,
 };
 
 pub struct WorldsPlugin;
@@ -21,7 +20,7 @@ pub struct WorldsPlugin;
 impl Plugin for WorldsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(SimulationState::Running), init_colonies)
-            .add_plugins((WorldsConfigPlugin, PopulationPlugin, FoodPlugin, WorldsUiPlugin, ConsumptionPlugin))
+            .add_plugins((WorldsConfigPlugin, PopulationPlugin, FoodPlugin, WorldsUiPlugin))
             /*.add_systems(
                 Update,
                 display_colonies.run_if(in_state(SimulationState::Running)),

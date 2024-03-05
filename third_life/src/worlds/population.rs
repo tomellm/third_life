@@ -3,6 +3,7 @@ pub mod components;
 mod giving_birth;
 mod dying;
 mod relationships;
+mod food_consumption;
 
 use events::*;
 use components::*;
@@ -23,6 +24,8 @@ use rand::{thread_rng, Rng};
 use rand_distr::{num_traits::{Float, real::Real}, Distribution, SkewNormal};
 use rnglib::{Language, RNG};
 
+use self::food_consumption::FoodConsumptionPlugin;
+
 use super::{init_colonies, WorldColony, config::WorldsConfig, WorldEntity};
 
 pub struct PopulationPlugin;
@@ -38,7 +41,7 @@ impl Plugin for PopulationPlugin {
                 update_population,
             ).run_if(in_state(SimulationState::Running)),
         )
-        .add_plugins((GivingBirthPlugin, DeathsPlugin, RelationshipsPlugin));
+        .add_plugins((GivingBirthPlugin, DeathsPlugin, RelationshipsPlugin, FoodConsumptionPlugin));
     }
 }
 
