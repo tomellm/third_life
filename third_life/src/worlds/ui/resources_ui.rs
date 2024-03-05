@@ -1,4 +1,4 @@
-use crate::worlds::{ui::components::*, food::{ResourceOf, CarbResource, MeatResource, FoodResource}};
+use crate::worlds::{ui::components::*, food::components::{ResourceOf, CarbResource, MeatResource, FoodResource}};
 
 use core::panic;
 use std::collections::HashMap;
