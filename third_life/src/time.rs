@@ -62,7 +62,7 @@ fn update_date(
             month_changed_writer.send(MonthChanged);
         }
 
-        date_changed_writer.send(DateChanged);
+        date_changed_writer.send(DateChanged::from_date(game_date.date));
     }
 }
 
@@ -74,7 +74,15 @@ impl std::ops::Deref for GameDate {
 }
 
 #[derive(Event)]
-pub struct DateChanged;
+pub struct DateChanged {
+    date: NaiveDate
+}
+
+impl DateChanged {
+    pub fn from_date(date: NaiveDate) -> Self {
+        Self { date }
+    }
+}
 
 #[derive(Event)]
 pub struct MonthChanged;
