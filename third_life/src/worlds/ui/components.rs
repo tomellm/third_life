@@ -22,7 +22,8 @@ pub struct PopulationHistorgram {
 pub struct PopulationDeathLines {
     pub timer: Timer,
     pub old_age_deaths: Vec<usize>,
-    pub starvation_deaths: Vec<usize>
+    pub starvation_deaths: Vec<usize>,
+    pub infant_deaths: Vec<usize>,
 }
 
 impl PopulationDeathLines {
@@ -30,19 +31,24 @@ impl PopulationDeathLines {
         Self {
             timer: Timer::from_seconds(0.5, TimerMode::Repeating),
             old_age_deaths: vec![0],
-            starvation_deaths: vec![0]
+            starvation_deaths: vec![0],
+            infant_deaths: vec![0]
         }
     }
     pub fn new_step(&mut self, delta: Duration) {
         if self.timer.tick(delta).just_finished() {
             self.old_age_deaths.push(0);
             self.starvation_deaths.push(0);
+            self.infant_deaths.push(0);
         }
         if self.old_age_deaths.len() > 25 {
             self.old_age_deaths.remove(0);
         }
         if self.starvation_deaths.len() > 25 {
             self.starvation_deaths.remove(0);
+        }
+        if self.infant_deaths.len() > 25 {
+            self.infant_deaths.remove(0);
         }
     }
 }

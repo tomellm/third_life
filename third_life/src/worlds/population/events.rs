@@ -8,7 +8,7 @@ pub struct CitizenCreated {
 }
 
 pub enum DeathReason {
-    OldAge, Starvation
+    OldAge, Starvation, InfantDeath
 }
 
 #[derive(Event)]
@@ -24,6 +24,9 @@ impl CitizenDied {
     }
     pub fn starved(colony: Entity, citizen: Entity) -> Self {
         Self { colony, citizen, reason: DeathReason::Starvation }
+    }
+    pub fn infant_death(colony: Entity, citizen: Entity) -> Self {
+        Self { colony, citizen, reason: DeathReason::InfantDeath }
     }
 }
 

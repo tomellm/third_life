@@ -26,7 +26,7 @@ use rnglib::{Language, RNG};
 
 use self::food_consumption::FoodConsumptionPlugin;
 
-use super::{init_colonies, WorldColony, config::WorldsConfig, WorldEntity};
+use super::{config::{WorldConfig, WorldsConfig}, init_colonies, WorldColony, WorldEntity};
 
 pub struct PopulationPlugin;
 
@@ -48,14 +48,12 @@ impl Plugin for PopulationPlugin {
 
 
 pub fn init_citizens(
-    colonies: Query<(Entity, &WorldEntity), With<WorldColony>>,
+    colonies: Query<(Entity, &WorldConfig), With<WorldColony>>,
     mut commands: Commands,
     mut event_writer: EventWriter<CitizenCreated>,
     game_date: Res<GameDate>,
-    worlds_config: Res<WorldsConfig>
 ) {
-    for (colony, WorldEntity { name }) in colonies.iter() {
-        let pop_config = worlds_config.worlds().iter().filter(|e| e.name().eq(name)).collect::<Vec<_>>().first().unwrap().population();
+    for (colony, pop_config) in colonies.iter() {
         let mut rng = thread_rng();
         let name_rng = RNG::try_from(&Language::Roman).unwrap();
         let skew_normal = SkewNormal::new(

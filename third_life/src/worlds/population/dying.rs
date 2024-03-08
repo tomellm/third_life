@@ -1,14 +1,12 @@
-use std::{f32::consts, iter::zip};
+use std::{f32::consts, iter::zip, collections::HashMap};
 use crate::{
-    common::utils::roll_chance,
-    time::{DateChanged, GameDate, MonthChanged},
-    SimulationState, worlds::{WorldEntity, config::WorldsConfig},
+    common::utils::roll_chance, time::{DateChanged, GameDate, MonthChanged}, worlds::{config::{WorldConfig, WorldsConfig}, env_and_infra::components::SanitationInfrastructure, WorldEntity}, SimulationState
 };
 use super::{events::*, components::*};
 use bevy::{prelude::*, transform::commands};
-use bevy_egui::{egui::{Window, ahash::{HashMap, HashMapExt}}, EguiContexts};
-use chrono::{Datelike, NaiveDate};
-use rand::{thread_rng, Rng, rngs::ThreadRng};
+use bevy_egui::{egui::{Window}, EguiContexts};
+use chrono::{Datelike, NaiveDate, Days};
+use rand::Rng;
 use rand_distr::{num_traits::{Float, real::Real}, Distribution, SkewNormal};
 use rnglib::{Language, RNG};
 
@@ -20,7 +18,8 @@ impl Plugin for DeathsPlugin {
             .add_systems(
                 Update,(
                     old_age_death,
-                    starvation
+                    starvation,
+                    infant_mortality
                 ).run_if(in_state(SimulationState::Running))
             )
             .add_event::<CitizenDied>();
@@ -29,23 +28,21 @@ impl Plugin for DeathsPlugin {
 
 pub fn old_age_death(
     mut date_changed: EventReader<DateChanged>,
-    worlds: Query<(Entity, &WorldEntity)>,
-    config: Res<WorldsConfig>,
+    worlds: Query<(Entity, &WorldConfig)>,
     mut commands: Commands,
     citizens: Query<(Entity, &CitizenOf, &Citizen)>,
     game_date: Res<GameDate>,
     mut death_events: EventWriter<CitizenDied>,
 ) {
-    let colonies = worlds.iter().map(|w|(w.1.name.clone(), w.0)).collect::<HashMap<_, _>>();
-    let epi_map = config.worlds().iter().map(|w| {
+    let epi_map = worlds.iter().map(|(e, w)| {
         let val = w.environment().env_health() + w.environment().ecosystem_vitylity() / 2.;
         let spread = w.population().life_expectancy_spread();
-        (colonies.get(&w.name()).unwrap(), (val * 100., spread))
+        (e, (val * 100., spread))
     }).collect::<HashMap<_, _>>();
 
     let days_passed = date_changed.read().collect::<Vec<_>>();
     let citizens = citizens.iter().collect::<Vec<_>>();
-    let mut rng = thread_rng();
+    let mut rng = rand::thread_rng();
     let probs = (0..citizens.len()).into_iter().map(|_| rng.gen()).collect::<Vec<f32>>();
 
     zip(citizens, probs).into_iter().fold(HashMap::new(), |mut acc: HashMap<_, _>, ((entity, colony, citizen), prob)| {
@@ -93,4 +90,38 @@ fn starvation(
             death_events.send(CitizenDied::starved(*colony, entity));
         }
     }
+}
+
+pub fn infant_mortality(
+    game_date: Res<GameDate>,
+    mut new_days: EventReader<DateChanged>,
+    mut commands: Commands,
+    infra: Query<(Entity, &SanitationInfrastructure)>,
+    citizens: Query<(Entity, &CitizenOf, &Citizen)>,
+    mut death_event: EventWriter<CitizenDied>,
+) {
+    let rates = infra.into_iter().map(|e|(e.0, e.1.live_birth_mortality_rate)).collect::<HashMap<_, _>>();
+
+    let events = new_days.read();
+
+    let first_date = game_date.date - Days::new(events.len() as u64);
+
+    let mut rng = rand::thread_rng();
+
+    citizens.into_iter().for_each(|(entity, of, citizen)| {
+        if citizen.birthday > game_date.date && citizen.birthday < first_date {
+            return;
+        }
+        let days_since_birth = (game_date.date - citizen.birthday).num_days() as usize;
+
+        if days_since_birth > (365 - events.len()) && days_since_birth <= 365 {
+            let r = rng.gen::<f32>();
+            if r < *rates.get(&of.colony).unwrap() {
+                commands.get_entity(entity).map(|mut e| {
+                    e.despawn();
+                    death_event.send(CitizenDied::infant_death(of.colony, entity));
+                });
+            }
+        }
+    });
 }

@@ -138,6 +138,11 @@ pub fn death_lines(
                     .color(Color32::from_rgb(255, 0, 0))
                     .name("starvation")
             );
+            plot_ui.line(
+                Line::new(usize_to_plotpoints(&deaths.infant_deaths))
+                    .color(Color32::from_rgb(0, 255, 0))
+                    .name("infant death")
+            );
         });
 }
 
@@ -147,21 +152,23 @@ pub fn death_events_listener(
     mut uis: Query<(&WorldUiEntity, &mut PopulationDeathLines)>
 ) {
     let mapped_events = events.read().into_iter()
-        .fold(HashMap::new(), |mut acc: HashMap<Entity, (usize, usize)>, e| {
-            let col_map = acc.entry(e.colony).or_insert((0, 0));
+        .fold(HashMap::new(), |mut acc: HashMap<Entity, (usize, usize, usize)>, e| {
+            let col_map = acc.entry(e.colony).or_insert((0, 0, 0));
             match e.reason {
                 DeathReason::OldAge => col_map.0 += 1,
-                DeathReason::Starvation => col_map.1 += 1
+                DeathReason::Starvation => col_map.1 += 1,
+                DeathReason::InfantDeath => col_map.2 += 1,
             };
             acc
         });
 
     for (WorldUiEntity(colony), mut lines) in uis.iter_mut() {
         lines.new_step(time.delta());
-        let (old_age, starvation) = mapped_events.get(&colony)
-            .map(|(old_age, starvation)|(*old_age, *starvation))
-            .unwrap_or((0, 0));
+        let (old_age, starvation, infant) = mapped_events.get(&colony)
+            .map(|(old_age, starvation, infant)|(*old_age, *starvation, *infant))
+            .unwrap_or((0, 0, 0));
         *lines.old_age_deaths.last_mut().unwrap() += old_age;
         *lines.starvation_deaths.last_mut().unwrap() += starvation;
+        *lines.infant_deaths.last_mut().unwrap() += infant;
     }
 }

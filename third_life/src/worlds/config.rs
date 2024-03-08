@@ -25,6 +25,8 @@ pub struct WorldConfig {
     world_position: (isize, isize),
     #[def(PopulationConfig::def_conf())]
     population: Option<PopulationConfig>,
+    #[def(GovernmentConfig::def_conf())]
+    government: Option<GovernmentConfig>,
     #[def(EnvironmentConfig::def_conf())]
     environment: Option<EnvironmentConfig>,
     #[def(FarmConfig::def_conf())]
@@ -51,6 +53,20 @@ pub struct PopulationConfig {
     /// starts to increase. Does not affect the actual average life expectancy.
     #[def(6.)]
     life_expectancy_spread: Option<f32>
+}
+
+#[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
+pub struct GovernmentConfig {
+    #[def(0.5)]
+    citizen_payout: Option<f32>,
+    #[def(25)]
+    civil_spending: Option<usize>,
+    #[def(25)]
+    sanitation_spending: Option<usize>,
+    #[def(25)]
+    social_spending: Option<usize>,
+    #[def(25)]
+    environmental_spending: Option<usize>,
 }
 
 /// General factors of the environment of the world
