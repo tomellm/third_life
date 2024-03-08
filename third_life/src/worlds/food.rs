@@ -15,6 +15,7 @@ use bevy_egui::{egui::Window, EguiContexts};
 use chrono::Months;
 use rand_distr::num_traits::Float;
 
+use super::config::WorldConfig;
 use super::{init_colonies, population::components::CitizenOf, WorldColony};
 
 pub struct FoodPlugin;
@@ -52,24 +53,31 @@ impl Plugin for FoodPlugin {
 fn init_food(
     mut commands: Commands,
     game_date: Res<GameDate>,
-    colonies: Query<Entity, With<WorldColony>>,
+    colonies: Query<(Entity, &WorldConfig), With<WorldColony>>,
 ) {
-    for colony in colonies.iter() {
+    for (colony_entity, world_config) in colonies.iter() {
         let mut wheat_farms = Vec::new();
-        for _ in 0..2 {
+        for _ in 0..world_config.farms().wheat_farms() {
             wheat_farms.push((
                 WheatFarm {
                     size: 17.4,
                     harvested: 17.4,
                 },
-                WheatFarmOf { colony },
+                WheatFarmOf {
+                    colony: colony_entity,
+                },
             ))
         }
         commands.spawn_batch(wheat_farms);
 
-        for _ in 0..7 {
+        for _ in 0..world_config.farms().cow_farms() {
             let cow_farm_entity = commands
-                .spawn((CowFarm { size: 34.0 }, CowFarmOf { colony }))
+                .spawn((
+                    CowFarm { size: 34.0 },
+                    CowFarmOf {
+                        colony: colony_entity,
+                    },
+                ))
                 .id();
             let mut cows = Vec::new();
             let mut bulls = Vec::new();
@@ -102,9 +110,24 @@ fn init_food(
             commands.spawn_batch(cows);
         }
 
-        commands.spawn((FoodResource { amount: 2000.0 }, ResourceOf { colony }));
-        commands.spawn((CarbResource { amount: 0.0 }, ResourceOf { colony }));
-        commands.spawn((MeatResource { amount: 0.0 }, ResourceOf { colony }));
+        commands.spawn((
+            FoodResource { amount: 2000.0 },
+            ResourceOf {
+                colony: colony_entity,
+            },
+        ));
+        commands.spawn((
+            CarbResource { amount: 0.0 },
+            ResourceOf {
+                colony: colony_entity,
+            },
+        ));
+        commands.spawn((
+            MeatResource { amount: 0.0 },
+            ResourceOf {
+                colony: colony_entity,
+            },
+        ));
     }
 }
 

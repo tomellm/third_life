@@ -11,8 +11,8 @@ use crate::{
 };
 
 use self::{
-    config::{WorldsConfig, WorldsConfigPlugin, SpriteConfig},
-    food::FoodPlugin, population::{PopulationPlugin, components::Population}, ui::WorldsUiPlugin,
+    config::{SpriteConfig, WorldConfig, WorldsConfig, WorldsConfigPlugin},
+    food::FoodPlugin, population::{components::Population, PopulationPlugin}, ui::WorldsUiPlugin,
 };
 
 pub struct WorldsPlugin;
@@ -57,7 +57,8 @@ fn init_colonies(
                 world.sprite().frames(),
                 world.sprite().frames_layout(),
                 world.sprite().shape(),
-                world.sprite().animation_timer()
+                world.sprite().animation_timer(),
+                world.clone()
         )).with_children(|parent| {
             parent.spawn(
                 Text2dBundle {
@@ -98,6 +99,7 @@ pub struct WorldColonyBundle {
     animation_index: AnimationIndex,
     sprite_size: SpriteSize,
     animation_timer: AnimationTimer,
+    config: WorldConfig
 }
 
 impl WorldColonyBundle {
@@ -109,7 +111,8 @@ impl WorldColonyBundle {
         num_frames: usize,
         (frames_layout_x, frames_layout_y): (usize, usize),
         (shape_x, shape_y): (usize, usize),
-        animation_timer: f32
+        animation_timer: f32,
+        config: WorldConfig
     ) -> Self {
         let layout = TextureAtlasLayout::from_grid(
             Vec2::new(shape_x as f32, shape_y as f32), 
@@ -139,7 +142,8 @@ impl WorldColonyBundle {
             animation_timer: AnimationTimer(Timer::from_seconds(
                     animation_timer,
                     TimerMode::Repeating
-            ))
+            )),
+            config
         }
     }
 }

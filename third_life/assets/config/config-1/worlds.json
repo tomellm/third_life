@@ -14,6 +14,10 @@
                 "env_health": 0.5,
                 "ecosystem_vitylity": 0.5
             },
+            "farms" : {
+                "cow_farms": 5,
+                "wheat_farms": 2
+            },
             "sprite": {
                 "sprite_sheet": "terran.png",
                 "frames": 60,

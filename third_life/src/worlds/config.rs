@@ -17,7 +17,7 @@ pub struct WorldsConfig {
     worlds: Vec<WorldConfig>
 }
 
-#[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
+#[derive(Deserialize, Debug, Clone, Resource, Default, Config, Component)]
 pub struct WorldConfig {
     /// Name should be unique, since its used for identification of multiple 
     /// things.
@@ -27,6 +27,8 @@ pub struct WorldConfig {
     population: Option<PopulationConfig>,
     #[def(EnvironmentConfig::def_conf())]
     environment: Option<EnvironmentConfig>,
+    #[def(FarmConfig::def_conf())]
+    farms: Option<FarmConfig>,
     sprite: SpriteConfig,
 }
 
@@ -60,6 +62,15 @@ pub struct EnvironmentConfig {
     env_health: Option<f32>,
     #[def(1.)]
     ecosystem_vitylity: Option<f32>,
+}
+
+
+#[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
+pub struct FarmConfig {
+    #[def(6)]
+    cow_farms: Option<usize>,
+     #[def(4)]
+    wheat_farms: Option<usize>,
 }
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
