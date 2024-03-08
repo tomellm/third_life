@@ -2,24 +2,20 @@ pub mod components;
 use self::components::*;
 pub mod events;
 use self::events::*;
-pub mod wheat_farming;
 pub mod cow_farming;
+pub mod wheat_farming;
+use crate::time::GameDate;
 use crate::worlds::food::{cow_farming::*, wheat_farming::*};
 
 use std::usize;
 
 use crate::{time::DateChanged, SimulationState};
 use bevy::{prelude::*, reflect::List, utils::HashMap};
-use bevy_egui::{
-    egui::{Window},
-    EguiContexts,
-};
+use bevy_egui::{egui::Window, EguiContexts};
+use chrono::Months;
+use rand_distr::num_traits::Float;
 
-use super::{
-    init_colonies,
-    population::components::{CitizenOf},
-    WorldColony,
-};
+use super::{init_colonies, population::components::CitizenOf, WorldColony};
 
 pub struct FoodPlugin;
 impl Plugin for FoodPlugin {
@@ -31,19 +27,21 @@ impl Plugin for FoodPlugin {
         .add_systems(
             Update,
             (
+                season_check_wheat,
+                mark_breeders,
+                breed_cows,
                 check_farm_workers,
                 get_farm_workers,
                 work_farm,
                 check_cow_farm_workers,
                 get_cow_farm_workers,
                 work_cow_farm,
-                cook_food
+                cook_food,
             )
-            .run_if(in_state(SimulationState::Running)),
+                .run_if(in_state(SimulationState::Running)),
         )
         .add_event::<WheatFarmNeedsWorker>()
         .add_event::<CowFarmNeedsWorker>()
-        .add_event::<MeatCreated>()
         .add_event::<CarbCreated>()
         .add_event::<MeatConsumed>()
         .add_event::<CarbConsumed>()
@@ -51,74 +49,60 @@ impl Plugin for FoodPlugin {
     }
 }
 
-
-fn init_food(mut commands: Commands, colonies: Query<Entity, With<WorldColony>>) {
+fn init_food(
+    mut commands: Commands,
+    game_date: Res<GameDate>,
+    colonies: Query<Entity, With<WorldColony>>,
+) {
     for colony in colonies.iter() {
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
+        let mut wheat_farms = Vec::new();
+        for _ in 0..2 {
+            wheat_farms.push((
+                WheatFarm {
+                    size: 17.4,
+                    harvested: 17.4,
+                },
+                WheatFarmOf { colony },
+            ))
+        }
+        commands.spawn_batch(wheat_farms);
 
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
-        commands.spawn((
-            WheatFarm {
-                size: 17.4,
-                harvested: 0.0,
-            },
-            WheatFarmOf { colony },
-        ));
-        commands.spawn((
-            CowFarm {
-                size: 500.0,
-                harvested: 0.0,
-            },
-            CowFarmOf { colony },
-        ));
-        commands.spawn((
-            CowFarm {
-                size: 500.0,
-                harvested: 0.0,
-            },
-            CowFarmOf { colony },
-        ));
-        commands.spawn((
-            CowFarm {
-                size: 500.0,
-                harvested: 0.0,
-            },
-            CowFarmOf { colony },
-        ));
-        commands.spawn((FoodResource { amount: 0.0 }, ResourceOf { colony }));
+        for _ in 0..7 {
+            let cow_farm_entity = commands
+                .spawn((CowFarm { size: 34.0 }, CowFarmOf { colony }))
+                .id();
+            let mut cows = Vec::new();
+            let mut bulls = Vec::new();
+            //47 is min starting cows and we want to have 10 ready to harvest right away
+            let total_cows = 57.0;
+            let total_bulls = (total_cows / 25.0).ceil() as usize;
+            for _ in 0..total_bulls {
+                bulls.push((
+                    Cow {
+                        birthday: game_date.date - Months::new(24),
+                    },
+                    IsBull,
+                    IsBreeder,
+                    CowOf {
+                        cow_farm: cow_farm_entity,
+                    },
+                ))
+            }
+            commands.spawn_batch(bulls);
+            for _ in 0..(total_cows as usize - total_bulls) {
+                cows.push((
+                    Cow {
+                        birthday: game_date.date - Months::new(24),
+                    },
+                    CowOf {
+                        cow_farm: cow_farm_entity,
+                    },
+                ))
+            }
+            commands.spawn_batch(cows);
+        }
+
+        commands.spawn((FoodResource { amount: 2000.0 }, ResourceOf { colony }));
         commands.spawn((CarbResource { amount: 0.0 }, ResourceOf { colony }));
         commands.spawn((MeatResource { amount: 0.0 }, ResourceOf { colony }));
     }
@@ -172,8 +156,9 @@ fn cook_food(
 
         let food_cook_multiplier = 5.0;
 
-        if carb_resource.amount > 100.0  * food_cook_multiplier
-            && meat_resource.amount > 100.0 * food_cook_multiplier {
+        if carb_resource.amount > 100.0 * food_cook_multiplier
+            && meat_resource.amount > 100.0 * food_cook_multiplier
+        {
             let carb_consumed_amount = 100.0 * food_cook_multiplier;
             let meat_consumed_amount = 100.0 * food_cook_multiplier;
             let food_created_amount = 100.0 * food_cook_multiplier;
@@ -182,9 +167,18 @@ fn cook_food(
             meat_resource.amount -= meat_consumed_amount;
             food_resource.amount += food_created_amount;
 
-            carb_consumed.send(CarbConsumed { colony, amount: carb_consumed_amount });
-            meat_consumed.send(MeatConsumed { colony, amount: meat_consumed_amount });
-            food_created.send(FoodCreated { colony, amount: food_created_amount });
+            carb_consumed.send(CarbConsumed {
+                colony,
+                amount: carb_consumed_amount,
+            });
+            meat_consumed.send(MeatConsumed {
+                colony,
+                amount: meat_consumed_amount,
+            });
+            food_created.send(FoodCreated {
+                colony,
+                amount: food_created_amount,
+            });
         }
     }
 }

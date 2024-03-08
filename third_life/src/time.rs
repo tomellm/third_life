@@ -75,7 +75,7 @@ impl std::ops::Deref for GameDate {
 
 #[derive(Event)]
 pub struct DateChanged {
-    date: NaiveDate
+    pub date: NaiveDate
 }
 
 impl DateChanged {

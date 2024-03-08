@@ -1,5 +1,5 @@
 {
-    "real_time_day_length": 0.001,
+    "real_time_day_length": 1,
     "starting_day": {
         "day": 1,
         "month": 1,
