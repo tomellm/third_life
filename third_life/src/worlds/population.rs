@@ -54,6 +54,7 @@ pub fn init_citizens(
     game_date: Res<GameDate>,
 ) {
     for (colony, pop_config) in colonies.iter() {
+        let pop_config = pop_config.population();
         let mut rng = thread_rng();
         let name_rng = RNG::try_from(&Language::Roman).unwrap();
         let skew_normal = SkewNormal::new(
