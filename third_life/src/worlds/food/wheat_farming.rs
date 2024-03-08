@@ -1,11 +1,27 @@
 use bevy::{prelude::*, utils::HashMap};
+use chrono::{Datelike, NaiveDate};
 
-use crate::{time::DateChanged, worlds::population::components::CitizenOf};
+use crate::{time::{DateChanged, GameDate}, worlds::population::components::CitizenOf};
 
 use super::{
     CarbCreated, CarbResource, Employed, ResourceOf, WheatFarm, WheatFarmNeedsWorker, WheatFarmOf,
     WheatFarmer,
 };
+
+pub fn season_check_wheat(
+    mut day_changed_event_reader: EventReader<DateChanged>,
+    mut wheat_farms: Query<&mut WheatFarm>,
+    game_date: Res<GameDate>
+) {
+    for _ in day_changed_event_reader.read() {
+        if game_date.date.month() == 6 && game_date.date.day() == 1 {
+            warn!("Harvest season has begun {:?}", game_date.date);
+            for mut wheat_farm in wheat_farms.iter_mut() {
+                wheat_farm.harvested = 0.0;
+            }
+        }
+    }
+}
 
 pub fn check_farm_workers(
     mut day_changed_event_reader: EventReader<DateChanged>,

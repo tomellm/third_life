@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use chrono::NaiveDate;
 
 #[derive(Component)]
 pub struct Employed;
@@ -35,6 +36,22 @@ pub struct WheatFarmer {
 }
 
 #[derive(Component)]
+pub struct Cow {
+    pub birthday: NaiveDate
+}
+
+#[derive(Component)]
+pub struct CowOf {
+    pub cow_farm: Entity
+}
+
+#[derive(Component)]
+pub struct IsBull;
+
+#[derive(Component)]
+pub struct IsBreeder;
+
+#[derive(Component)]
 pub struct MeatResource {
     pub amount: f32,
 }
@@ -42,7 +59,6 @@ pub struct MeatResource {
 #[derive(Component)]
 pub struct CowFarm {
     pub size: f32,
-    pub harvested: f32,
 }
 
 #[derive(Component)]
