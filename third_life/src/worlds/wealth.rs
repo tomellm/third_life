@@ -8,7 +8,7 @@ use crate::SimulationState;
 
 use self::compontents::WealthAndSpending;
 
-use super::{population::components::{CitizenOf, Population}, food::Employed};
+use super::{food::components::Employed, population::components::{CitizenOf, Population}};
 
 pub struct WealthPlugin;
 
