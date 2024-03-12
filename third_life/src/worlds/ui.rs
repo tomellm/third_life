@@ -63,7 +63,7 @@ fn display_world_uis(
                 ui.separator();
                 resources_storage(name, ui, &stor);
                 ui.separator();
-                general_pop(ui, &pop.count, &pop.average_age, &pop.average_children_per_mother);
+                general_pop(ui, &pop);
                 ui.separator();
                 age_histogram(name, ui, &pop.ages);
                 ui.separator();

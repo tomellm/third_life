@@ -72,6 +72,9 @@ pub fn update_general_pop(
         match map.get_mut(&col) {
             Some(p) => {
                 p.count = population.count;
+                p.working_pop = population.working_pop;
+                p.younglings = population.younglings;
+                p.retirees = population.retirees;
                 p.average_age = population.average_age;
                 p.average_children_per_mother = population.average_children_per_mother;
             }
@@ -82,14 +85,15 @@ pub fn update_general_pop(
 
 pub fn general_pop(
     ui: &mut Ui,
-    count: &usize,
-    average_age: &usize,
-    average_children_per_mother: &f32,
+    pop: &PopulationHistorgram,
 ) {
     ui.horizontal(|ui| {
-        ui.label(format!("Pop count: {count}"));
-        ui.label(format!("Average Age: {average_age}"));
-        ui.label(format!("Average Children per Mother: {average_children_per_mother}"));
+        ui.label(format!("Pop count: {:?}",pop.count));
+        ui.label(format!("Working Pop: {:?}",pop.working_pop));
+        ui.label(format!("Younglings count: {:?}",pop.younglings));
+        ui.label(format!("Retirees count: {:?}",pop.retirees));
+        ui.label(format!("Average Age: {:?}", pop.average_age));
+        ui.label(format!("Average Children per Mother: {:?}", pop.average_children_per_mother));
     });
 }
 

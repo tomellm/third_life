@@ -1,0 +1,24 @@
+apiVersion: 1
+
+datasources:
+    - name: InfluxDB
+      type: influxdb
+      access: server
+      url: http://influxdb:8086
+      isDefault: true
+      basicAuth: true
+      basicAuthPassword: true
+      basicAuthUser: admin
+      secureJsonData:
+          basicAuthPassword: admin12345
+          token: "admin-token"
+      jsonData:
+          defaultBucket: "third-life"
+          organization: "third-life-team"
+          url: https://influxdb:8086
+          host: influxdb
+          port: 8086
+          httpMode: GET
+          version: Flux
+      database: third-life
+      editable: true

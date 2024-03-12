@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 use chrono::NaiveDate;
 
-#[derive(Component)]
-pub struct Employed;
-
 #[derive(Component, PartialEq, Eq, Hash)]
 pub struct ResourceOf {
     pub colony: Entity,

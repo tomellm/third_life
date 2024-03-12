@@ -14,8 +14,7 @@ use crate::{
 };
 
 use self::{
-    config::{WorldsConfig, WorldsConfigPlugin, SpriteConfig, WorldConfig},
-    food::FoodPlugin, population::{PopulationPlugin, components::Population}, ui::WorldsUiPlugin, env_and_infra::{InfrastructurePlugin, components::ColonyInfraAndEnvBundle}, wealth::compontents::{WealthAndSpending, ColonyWealthBundle}
+    config::{SpriteConfig, WorldConfig, WorldsConfig, WorldsConfigPlugin}, env_and_infra::{components::ColonyInfraAndEnvBundle, InfrastructurePlugin}, food::FoodPlugin, population::{components::Population, PopulationPlugin}, ui::WorldsUiPlugin, wealth::{components::{ColonyWealthBundle, WealthAndSpending}, WealthPlugin}
 };
 
 pub struct WorldsPlugin;
@@ -25,7 +24,7 @@ impl Plugin for WorldsPlugin {
         app.add_systems(OnEnter(SimulationState::Running), init_colonies)
             .add_plugins((
                 WorldsConfigPlugin, PopulationPlugin, FoodPlugin, WorldsUiPlugin, 
-                InfrastructurePlugin
+                InfrastructurePlugin, WealthPlugin
             ));
 
     }

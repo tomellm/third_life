@@ -1,10 +1,10 @@
 use bevy::{prelude::*, utils::HashMap};
 use chrono::{Datelike, NaiveDate};
 
-use crate::{time::{DateChanged, GameDate}, worlds::population::components::CitizenOf};
+use crate::{time::{DateChanged, GameDate}, worlds::population::components::{CitizenOf, Employed}};
 
 use super::{
-    CarbCreated, CarbResource, Employed, ResourceOf, WheatFarm, WheatFarmNeedsWorker, WheatFarmOf,
+    CarbCreated, CarbResource, ResourceOf, WheatFarm, WheatFarmNeedsWorker, WheatFarmOf,
     WheatFarmer,
 };
 

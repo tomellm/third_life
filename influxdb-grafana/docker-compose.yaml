@@ -1,0 +1,37 @@
+volumes:
+    influxdb-data:
+        driver: local
+    grafana-data:
+        driver: local
+services:
+    influxdb:
+        image: influxdb:latest
+        container_name: influxdb
+        ports:
+            - "8086:8086"
+        volumes:
+            - influxdb-data:/var/lib/influxdb2
+            - /etc/influxdb2:/etc/influxdb2
+        environment:
+            - DOCKER_INFLUXDB_INIT_MODE=setup
+            - DOCKER_INFLUXDB_INIT_USERNAME=admin
+            - DOCKER_INFLUXDB_INIT_PASSWORD=admin12345
+            - DOCKER_INFLUXDB_INIT_BUCKET=third-life
+            - DOCKER_INFLUXDB_INIT_ORG=third-life-team
+            - DOCKER_INFLUXDB_INIT_CLI_CONFIG_NAME=default-3
+            - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=admin-token
+            - DOCKER_INFLUXDB_INIT_TOKEN=admin-token
+
+        restart: unless-stopped
+    grafana:
+        image: grafana/grafana-oss:latest
+        container_name: grafana
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin12345
+            - GF_SECURITY_ADMIN_USER=admin
+        ports:
+            - "3000:3000"
+        volumes:
+            - grafana-data:/var/lib/grafana
+            - ./grafana/provisioning:/etc/grafana/provisioning
+        restart: unless-stopped

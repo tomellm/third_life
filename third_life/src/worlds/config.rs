@@ -29,8 +29,8 @@ pub struct WorldConfig {
     government: Option<GovernmentConfig>,
     #[def(EnvironmentConfig::def_conf())]
     environment: Option<EnvironmentConfig>,
-    #[def(FarmConfig::def_conf())]
-    farms: Option<FarmConfig>,
+    #[def(FoodConfig::def_conf())]
+    food: Option<FoodConfig>,
     sprite: SpriteConfig,
 }
 
@@ -57,7 +57,7 @@ pub struct PopulationConfig {
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
 pub struct GovernmentConfig {
-    #[def(0.5)]
+    #[def(0.1)]
     citizen_payout: Option<f32>,
     #[def(25)]
     civil_spending: Option<usize>,
@@ -82,11 +82,15 @@ pub struct EnvironmentConfig {
 
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]
-pub struct FarmConfig {
+pub struct FoodConfig {
     #[def(6)]
     cow_farms: Option<usize>,
      #[def(4)]
     wheat_farms: Option<usize>,
+    #[def(5000.0)]
+    starting_beef: Option<f32>,
+     #[def(5000.0)]
+    starting_carb: Option<f32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Resource, Default, Config)]

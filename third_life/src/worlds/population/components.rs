@@ -4,6 +4,9 @@ use chrono::NaiveDate;
 #[derive(Component, Default)]
 pub struct Population {
     pub count: usize,
+    pub working_pop: usize,
+    pub younglings: usize,
+    pub retirees: usize,
     pub average_age: usize,
     pub average_children_per_mother: f32
 }
@@ -51,6 +54,19 @@ pub struct Spouse {
     pub spouse: Entity,
 }
 
-
 #[derive(Component)]
 pub struct Widowed;
+
+#[derive(Component)]
+pub struct Employed;
+
+#[derive(Component)]
+pub struct Employable;
+
+
+#[derive(Component)]
+pub struct Youngling;
+
+#[derive(Component)]
+pub struct Retiree;
+
