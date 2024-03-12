@@ -1,4 +1,4 @@
-pub mod compontents;
+pub mod components;
 
 use std::collections::HashMap;
 
@@ -6,9 +6,9 @@ use bevy::prelude::*;
 
 use crate::SimulationState;
 
-use self::compontents::WealthAndSpending;
+use self::components::WealthAndSpending;
 
-use super::{food::components::Employed, population::components::{CitizenOf, Population}};
+use super::population::components::{CitizenOf, Employed, Population};
 
 pub struct WealthPlugin;
 

@@ -13,6 +13,9 @@ pub struct WorldUiEntity(pub Entity);
 #[derive(Component)]
 pub struct PopulationHistorgram {
     pub count: usize,
+    pub working_pop: usize,
+    pub younglings: usize,
+    pub retirees: usize,
     pub average_age: usize,
     pub ages: HashMap<usize, usize>,
     pub average_children_per_mother: f32,
@@ -87,7 +90,7 @@ impl WorldUiBundle {
             ui: WorldUi,
             name: WorldUiName(name),
             entity: WorldUiEntity(entity),
-            pop: PopulationHistorgram { count: 0, average_age: 0, ages: HashMap::new(), average_children_per_mother: 0.0},
+            pop: PopulationHistorgram { count: 0, working_pop: 0, younglings: 0, retirees: 0, average_age: 0, ages: HashMap::new(), average_children_per_mother: 0.0},
             deaths: PopulationDeathLines::new(),
             stor: ResourceStorage::new(),
         }

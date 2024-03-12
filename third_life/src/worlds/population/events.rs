@@ -30,3 +30,9 @@ impl CitizenDied {
     }
 }
 
+#[derive(Event)]
+pub struct CitizenBirthday {
+    pub entity: Entity,
+    pub age: usize
+}
+

@@ -52,8 +52,8 @@ pub fn citizen_births(
                         };
 
                         match roll_chance(50) {
-                            true => commands.spawn((new_born, CitizenOf { colony }, Male)),
-                            false => commands.spawn((new_born, CitizenOf { colony }, Female { children_had: 0 } )),
+                            true => commands.spawn((new_born, CitizenOf { colony }, Youngling, Male)),
+                            false => commands.spawn((new_born, CitizenOf { colony }, Youngling, Female { children_had: 0 } )),
                         };
 
                         event_writer.send(CitizenCreated { age: 0, colony });
@@ -61,6 +61,7 @@ pub fn citizen_births(
                 }
                 commands.get_entity(entity).map(|mut e| {
                     e.remove::<Pregnancy>();
+                    e.try_insert(Employable);
                 });
             }
         }
@@ -78,6 +79,7 @@ pub fn init_miscarriage(
             if miscarriage_chance(game_date.date.years_since(w_citizen.birthday).unwrap() as u8) {
                 commands.get_entity(entity).map(|mut e| {
                     e.remove::<Pregnancy>();
+                    e.try_insert(Employable);
                 });
             }
         }

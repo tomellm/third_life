@@ -10,6 +10,7 @@ use crate::worlds::food::{cow_farming::*, wheat_farming::*};
 use std::usize;
 
 use crate::{time::DateChanged, SimulationState};
+use bevy::ecs::world;
 use bevy::{prelude::*, reflect::List, utils::HashMap};
 use bevy_egui::{egui::Window, EguiContexts};
 use chrono::Months;
@@ -57,7 +58,7 @@ fn init_food(
 ) {
     for (colony_entity, world_config) in colonies.iter() {
         let mut wheat_farms = Vec::new();
-        for _ in 0..world_config.farms().wheat_farms() {
+        for _ in 0..world_config.food().wheat_farms() {
             wheat_farms.push((
                 WheatFarm {
                     size: 17.4,
@@ -70,7 +71,7 @@ fn init_food(
         }
         commands.spawn_batch(wheat_farms);
 
-        for _ in 0..world_config.farms().cow_farms() {
+        for _ in 0..world_config.food().cow_farms() {
             let cow_farm_entity = commands
                 .spawn((
                     CowFarm { size: 34.0 },
@@ -117,13 +118,17 @@ fn init_food(
             },
         ));
         commands.spawn((
-            CarbResource { amount: 0.0 },
+            CarbResource {
+                amount: world_config.food().starting_carb(),
+            },
             ResourceOf {
                 colony: colony_entity,
             },
         ));
         commands.spawn((
-            MeatResource { amount: 0.0 },
+            MeatResource {
+                amount: world_config.food().starting_carb(),
+            },
             ResourceOf {
                 colony: colony_entity,
             },

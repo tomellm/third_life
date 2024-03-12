@@ -40,9 +40,9 @@ pub struct WealthAndSpending {
 impl WealthAndSpending {
     /// Each citizen gets a payout according to [`Self::citizen_payout`] which
     /// leaves us with a share of the money made to use as gdp
-    pub fn calc(&mut self, working_count: usize, population_count: usize) {
+    pub fn calc(&mut self, working: usize, population_count: usize) {
         let population_count = population_count as f32;
-        self.total_wealth = working_count as f32;
+        self.total_wealth = working as f32;
         self.spending_available =  self.total_wealth - (population_count * self.citizen_payout);
     }
     pub fn total_civil_spending(&self) -> f32 {

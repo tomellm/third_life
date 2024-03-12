@@ -35,10 +35,10 @@ impl SanitationInfrastructure {
         self.live_birth_mortality_rate_fn(spending);
     }
     fn health_index_score_fn(&mut self, spending: f32) {
-        self.health_index_score = corr_ln(5.001857986634171, 68.60777916821428, spending);
+        self.health_index_score = corr_ln(5.00186, 68.60778, spending);
     }
     fn live_birth_mortality_rate_fn(&mut self, spending: f32) {
-        self.live_birth_mortality_rate = corr_ln(-0.00259713855544207, 0.009227181881168221, spending);
+        self.live_birth_mortality_rate = corr_ln(-0.00260, 0.00923, spending);
     }
 }
 

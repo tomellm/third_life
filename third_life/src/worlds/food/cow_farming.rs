@@ -7,11 +7,11 @@ use rand_distr::num_traits::Float;
 use crate::{
     common::utils::roll_chance,
     time::{DateChanged, GameDate},
-    worlds::population::components::CitizenOf,
+    worlds::population::components::{CitizenOf, Employed, Retiree, Youngling},
 };
 
 use super::{
-    Cow, CowFarm, CowFarmNeedsWorker, CowFarmOf, CowFarmer, CowOf, Employed, IsBreeder, IsBull,
+    Cow, CowFarm, CowFarmNeedsWorker, CowFarmOf, CowFarmer, CowOf, IsBreeder, IsBull,
     MeatResource, ResourceOf,
 };
 
@@ -140,7 +140,7 @@ pub fn check_cow_farm_workers(
 pub fn get_cow_farm_workers(
     mut commands: Commands,
     mut event_reader: EventReader<CowFarmNeedsWorker>,
-    free_citizens: Query<(Entity, &CitizenOf), Without<Employed>>,
+    free_citizens: Query<(Entity, &CitizenOf), (Without<Employed>, Without<Youngling>, Without<Retiree>)>,
 ) {
     for needs_worker_event in event_reader.read() {
         for (citizen, citizen_of) in free_citizens.iter() {
@@ -218,7 +218,6 @@ pub fn work_cow_farm(
                     continue;
                 }
                 let mut to_harvest = cows_count - 47;
-                //warn!("farmer hours: {:?}", farmers_map.get(farm_entity));
                 if to_harvest as f32
                     > (farmers_map.get(&farm_entity).unwrap_or(&0) * 8) as f32 / 6.25
                 {

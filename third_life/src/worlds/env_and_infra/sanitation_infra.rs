@@ -1,7 +1,7 @@
 
 use bevy::prelude::*;
 
-use crate::{SimulationState, worlds::wealth::compontents::{SpendingPolicy, WealthAndSpending}};
+use crate::{SimulationState, worlds::wealth::components::{SpendingPolicy, WealthAndSpending}};
 
 use super::components::SanitationInfrastructure;
 
